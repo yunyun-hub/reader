@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>批注阅读器</title>
+<meta name="theme-color" content="#ECEEE8">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="批注阅读器">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.json">
+<script src="lib/jszip.min.js"></script>
+<style>
+:root{
+  --paper:#ECEEE8; --sheet:#F7F8F4; --ink:#1F2726; --muted:#66706C; --rule:#CDD2CA;
+  --mark:#F2DE8E; --accent:#2F45A0; --accent-soft:#DDE2F5; --err:#9A2B2B; --ok:#2D6A4F;
+  --fs:20px;
+  --text:"Iowan Old Style","Palatino Linotype",Palatino,"Book Antiqua",Georgia,"Songti SC","Noto Serif CJK SC",serif;
+  --zh:"PingFang SC","Hiragino Sans GB","Noto Sans CJK SC","Microsoft YaHei",system-ui,sans-serif;
+}
+:root[data-theme="dark"]{
+  --paper:#151918; --sheet:#1D2221; --ink:#DCE1DA; --muted:#8E9792; --rule:#333B39;
+  --mark:rgba(214,182,72,.30); --accent:#A8B4F2; --accent-soft:rgba(120,140,230,.18); --err:#E08A8A; --ok:#7CC4A0;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#151918; --sheet:#1D2221; --ink:#DCE1DA; --muted:#8E9792; --rule:#333B39;
+    --mark:rgba(214,182,72,.30); --accent:#A8B4F2; --accent-soft:rgba(120,140,230,.18); --err:#E08A8A; --ok:#7CC4A0;
+  }
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-padding-top:70px}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--zh);-webkit-text-size-adjust:100%;
+  padding-top:env(safe-area-inset-top,0px)}
+button,select,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.hidden{display:none!important}
+
+.bar{position:sticky;top:0;z-index:20;background:var(--paper);border-bottom:1px solid var(--rule);
+  display:flex;align-items:center;gap:8px;padding:10px 16px;padding-top:calc(10px + env(safe-area-inset-top,0px));margin-top:calc(-1 * env(safe-area-inset-top,0px))}
+.bar .t{font-family:var(--text);font-style:italic;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;flex:0 1 auto}
+.bar select{flex:1 1 auto;min-width:0;max-width:320px;background:var(--sheet);border:1px solid var(--rule);border-radius:6px;padding:6px 8px;font-size:14px}
+.bar .sp{flex:1}
+.ib{background:none;border:1px solid var(--rule);border-radius:6px;padding:5px 9px;font-size:14px;white-space:nowrap}
+.ib:hover{border-color:var(--muted)}
+
+.start{min-height:calc(100vh - 20px);display:flex;align-items:center;justify-content:center;padding:32px 20px}
+.drop{max-width:520px;width:100%;border:1.5px dashed var(--muted);border-radius:14px;padding:44px 28px;text-align:center}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop h1{font-family:var(--text);font-weight:500;font-size:clamp(28px,6vw,40px);line-height:1.15;margin:0 0 14px}
+.drop p{color:var(--muted);line-height:1.7;margin:0 0 22px;font-size:15px}
+.pick{display:inline-block;background:var(--ink);color:var(--paper);border:0;border-radius:8px;padding:11px 22px;font-size:15px}
+.drop small{display:block;margin-top:16px;color:var(--muted);font-size:13px;line-height:1.6}
+.resume{margin-top:14px}
+.status{margin-top:14px;font-size:14px;color:var(--muted);min-height:1.4em}
+.status.bad{color:var(--err)}
+
+.layout{display:grid;grid-template-columns:minmax(0,1fr)}
+@media (min-width:960px){ .layout{grid-template-columns:minmax(0,1fr) 400px} }
+article{font-family:var(--text);font-size:var(--fs);line-height:1.75;max-width:34em;width:100%;margin:0 auto;padding:28px 22px 120px}
+article p{margin:0 0 .9em}
+article h2{font-weight:500;font-size:1.25em;line-height:1.3;margin:1.6em 0 .8em}
+.s{border-radius:3px}
+.s.on{background:var(--mark)}
+.w{cursor:pointer;border-radius:2px}
+@media (hover:hover){ .w:hover{background:var(--accent-soft)} }
+.w.on{background:var(--accent-soft);box-shadow:inset 0 -2px 0 var(--accent)}
+.w.saved{text-decoration:underline dotted var(--accent);text-underline-offset:4px}
+.chnav{display:flex;justify-content:space-between;gap:12px;margin-top:2.5em;font-family:var(--zh);font-size:15px}
+.chnav button{background:none;border:1px solid var(--rule);border-radius:8px;padding:9px 14px}
+.chnav button:disabled{opacity:.35;cursor:default}
+
+aside{background:var(--sheet);border-left:1px solid var(--rule)}
+.pin{position:sticky;top:57px;max-height:calc(100vh - 57px);overflow:auto;padding:20px 22px 40px}
+.ph{display:flex;align-items:center;gap:8px;margin-bottom:12px}
+.ph .tabs{display:flex;gap:4px;flex:1}
+.tab{background:none;border:0;border-bottom:2px solid transparent;padding:4px 6px;font-size:14px;color:var(--muted)}
+.tab.on{color:var(--ink);border-bottom-color:var(--accent)}
+.close{display:none}
+.hint{color:var(--muted);font-size:14px;line-height:1.75}
+.quote{font-family:var(--text);font-size:16px;line-height:1.6;border-left:3px solid var(--mark);padding:2px 0 2px 12px;margin:0 0 12px}
+.quote.clip{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.row{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 14px}
+.row .ib{font-size:13px;text-decoration:none;color:inherit}
+.more{background:none;border:0;padding:0;color:var(--accent);font-size:13px;margin:-6px 0 12px}
+.wc{border:1px solid var(--rule);border-radius:10px;padding:14px 16px;margin-bottom:14px;background:var(--paper)}
+.hwl{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.hw{font-family:var(--text);font-size:24px;font-weight:600;line-height:1.2}
+.ipa{font-family:var(--text);font-size:16px;color:var(--muted)}
+.spk{background:none;border:1px solid var(--rule);border-radius:999px;width:30px;height:30px;padding:0;font-size:14px;line-height:28px}
+.star{margin-left:auto;background:none;border:1px solid var(--rule);border-radius:6px;padding:3px 8px;font-size:13px}
+.star.on{border-color:var(--accent);color:var(--accent)}
+.from{font-size:13px;color:var(--muted);margin:6px 0 2px}
+.defs{margin:10px 0 0;padding:0;list-style:none}
+.defs li{display:flex;gap:8px;align-items:flex-start;font-size:15px;line-height:1.6;margin-bottom:6px}
+.pos{flex:none;font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:4px;padding:0 5px;margin-top:3px;white-space:nowrap}
+.meta{margin-top:10px;font-size:13px;color:var(--muted);line-height:1.7}
+.meta b{font-weight:500;color:var(--ink)}
+.name{border-left:3px solid var(--accent);padding-left:8px}
+.miss{color:var(--muted);font-size:14px;line-height:1.7}
+.tr{font-size:15.5px;line-height:1.8;border-radius:8px;background:var(--paper);border:1px solid var(--rule);padding:12px 14px;margin-bottom:12px}
+.tr .lab{display:block;font-size:12px;color:var(--muted);margin-bottom:4px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:8px 14px;border-radius:8px;font-size:14px;z-index:60;opacity:0;pointer-events:none;transition:opacity .2s}
+.toast.on{opacity:1}
+.wl{list-style:none;margin:0;padding:0}
+.wl li{border-bottom:1px solid var(--rule);padding:10px 0;font-size:14px;line-height:1.6}
+.wl b{font-family:var(--text);font-size:17px}
+.wl .x{float:right;background:none;border:0;color:var(--muted);font-size:13px}
+.wl .ctx{color:var(--muted);font-family:var(--text);font-size:14px}
+
+@media (max-width:959px){
+  aside{position:fixed;left:0;right:0;bottom:0;z-index:30;border-left:0;border-top:1px solid var(--rule);
+    border-radius:16px 16px 0 0;box-shadow:0 -8px 30px rgba(0,0,0,.12);transform:translateY(105%);transition:transform .22s ease}
+  aside.open{transform:none}
+  .pin{position:static;max-height:56vh;padding:12px 18px calc(24px + env(safe-area-inset-bottom,0px))}
+  .close{display:inline-block}
+  .bar .t{display:none}
+  body.sheet article{padding-bottom:60vh}
+}
+@media (prefers-reduced-motion:reduce){ aside,.toast{transition:none} }
+</style>
+</head>
+<body>
+
+<div class="bar hidden" id="bar">
+  <span class="t" id="btitle"></span>
+  <select id="chsel" aria-label="选择章节"></select>
+  <span class="sp"></span>
+  <button class="ib" id="fsm" aria-label="缩小字号">A−</button>
+  <button class="ib" id="fsp" aria-label="放大字号">A+</button>
+  <button class="ib" id="theme" aria-label="切换深色或浅色">◐</button>
+  <button class="ib" id="swap">换书</button>
+</div>
+
+<section class="start" id="start">
+  <div class="drop" id="drop">
+    <h1>把一本英文书放进来</h1>
+    <p>支持 EPUB 和 TXT 文件。读的时候点任意单词查离线词典，点句子可以听发音、看翻译。</p>
+    <button class="pick" id="pick">选择文件</button>
+    <input type="file" id="file" accept=".epub,.txt,application/epub+zip,text/plain" hidden>
+    <small>电脑上也可以直接把文件拖进这个框。<br>书和生词本只保存在这台设备上，不上传到任何地方。</small>
+    <div class="resume hidden" id="resumeWrap"><button class="ib" id="resume"></button></div>
+    <div class="status" id="status" role="status"></div>
+  </div>
+</section>
+
+<div class="layout hidden" id="reader">
+  <article id="text" lang="en"></article>
+  <aside id="aside" aria-label="注解">
+    <div class="pin">
+      <div class="ph">
+        <div class="tabs"><button class="tab on" id="tNote">注解</button><button class="tab" id="tList">生词本 <span id="cnt"></span></button></div>
+        <button class="ib close" id="close">收起</button>
+      </div>
+      <div id="panel"></div>
+      <div id="list" class="hidden"></div>
+    </div>
+  </aside>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+(function(){
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const norm=s=>s.replace(/\s+/g," ").trim();
+const store={
+  get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},
+  set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}
+};
+function hash(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)}
+let toastT=0;
+function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("on"),1800)}
+const HINT='<p class="hint">点正文里的任意单词，这里会显示词典释义。点句子里的标点或空白处，可以只选中整句。</p>';
+
+/* ---------- offline service (only when hosted over https) ---------- */
+if("serviceWorker" in navigator && location.protocol==="https:"){
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+}
+
+/* ---------- theme ---------- */
+const root=document.documentElement;
+let theme=store.get("theme");
+if(theme) root.dataset.theme=theme;
+$("#theme").onclick=()=>{
+  const dark=theme?theme==="dark":matchMedia("(prefers-color-scheme: dark)").matches;
+  theme=dark?"light":"dark";root.dataset.theme=theme;store.set("theme",theme);
+};
+
+/* ---------- dictionary ---------- */
+window.__D=window.__D||{};
+const loading={};
+function loadLetter(L){
+  if(window.__D[L]) return Promise.resolve(window.__D[L]);
+  if(loading[L]) return loading[L];
+  return loading[L]=new Promise(res=>{
+    const sc=document.createElement("script");sc.src="dict/"+L+".js";
+    sc.onload=()=>res(window.__D[L]||{});
+    sc.onerror=()=>{delete loading[L];res(null)};
+    document.head.appendChild(sc);
+  });
+}
+async function getRaw(w){
+  if(!w||!/^[a-z]/.test(w)) return null;
+  const d=await loadLetter(w[0]); if(!d) return undefined;
+  return d[w]||null;
+}
+async function entry(w,depth){
+  let e=await getRaw(w);
+  if(typeof e==="string"&&e[0]==="@"&&!depth){const l=e.slice(1);const t=await entry(l,1);return t?{...t,lemmaOf:w}:null}
+  if(e===undefined) return undefined;
+  return e?{word:w,ph:e[0],tr:e[1],ex:e[2],tag:e[3],col:e[4]}:null;
+}
+function candidates(raw){
+  let w=raw.toLowerCase().replace(/[’‘]/g,"'").replace(/^'+|'+$/g,"");
+  const c=[w];
+  const add=x=>{if(x&&x.length>1&&!c.includes(x))c.push(x)};
+  add(w.replace(/'s$/,""));
+  add(w.replace(/'/g,""));
+  add(w.replace(/-/g,""));
+  const b=w.replace(/'s$/,"");
+  if(/ies$/.test(b)) add(b.slice(0,-3)+"y");
+  if(/es$/.test(b)) add(b.slice(0,-2));
+  if(/s$/.test(b)) add(b.slice(0,-1));
+  if(/ied$/.test(b)) add(b.slice(0,-3)+"y");
+  if(/ed$/.test(b)){ add(b.slice(0,-2)); add(b.slice(0,-1)); if(/(.)\1ed$/.test(b)) add(b.slice(0,-3)); }
+  if(/ing$/.test(b)){ add(b.slice(0,-3)); add(b.slice(0,-3)+"e"); if(/(.)\1ing$/.test(b)) add(b.slice(0,-4)); }
+  if(/ly$/.test(b)) add(b.slice(0,-2));
+  if(/er$/.test(b)){ add(b.slice(0,-2)); add(b.slice(0,-1)); }
+  if(/est$/.test(b)){ add(b.slice(0,-3)); add(b.slice(0,-2)); }
+  if(w.includes("-")) w.split("-").forEach(add);
+  return c;
+}
+async function lookup(raw){
+  let offline=false;
+  for(const c of candidates(raw)){
+    const e=await entry(c,0);
+    if(e===undefined){offline=true;continue}
+    if(e) return {...e,guessed:c!==raw.toLowerCase()&&!e.lemmaOf?c:null};
+  }
+  return offline?{failed:true}:null;
+}
+
+/* labels — every abbreviation spelled out */
+const POS={"n":"名词","v":"动词","vt":"及物动词","vi":"不及物动词","adj":"形容词","a":"形容词","adv":"副词","ad":"副词","prep":"介词","conj":"连词","pron":"代词","int":"感叹词","interj":"感叹词","num":"数词","art":"冠词","aux":"助动词","abbr":"缩写","pl":"复数","suf":"后缀","pref":"前缀","det":"限定词","modal":"情态动词"};
+const DOM={"医":"医学","计":"计算机","化":"化学","法":"法律","经":"经济","机":"机械","电":"电学","建":"建筑","体":"体育","复":"复数","美":"美式用法","英":"英式用法","口":"口语","美口":"美式口语","俚":"俚语","美俚":"美式俚语","方":"方言","英方":"英国方言","古":"古旧用法","动":"动物","植":"植物","数":"数学","财":"财务","气":"气象","心理":"心理学","单复同":"单复数同形","希神":"希腊神话","纺":"纺织","地质":"地质学","西":"西班牙语","德":"德语","意":"意大利语","日":"日语","苏":"苏格兰用法","澳":"澳大利亚用法"};
+const EXN={p:"过去式",d:"过去分词",i:"现在分词",3:"第三人称单数",r:"比较级",t:"最高级",s:"复数"};
+const TAG={zk:"中考",gk:"高考",cet4:"大学英语四级",cet6:"大学英语六级",ky:"考研",toefl:"托福",ielts:"雅思",gre:"GRE（美国研究生入学考试）"};
+function defLines(tr){
+  return tr.split("\n").map(l=>{
+    const m=l.match(/^((?:[a-z]+\.\s*&?\s*)+)\s*(.*)$/i);
+    if(m){
+      const tags=m[1].split(/[.&\s]+/).filter(Boolean).map(t=>POS[t.toLowerCase()]||t);
+      return {pos:tags.join(" / "),txt:m[2]};
+    }
+    const b=l.match(/^\[([^\]]+)\]\s*(.*)$/);
+    if(b) return {pos:DOM[b[1].trim()]||b[1],txt:b[2]};
+    return {pos:"",txt:l};
+  }).filter(x=>x.txt);
+}
+function forms(ex,self){
+  if(!ex) return "";
+  const out=[];
+  for(const p of ex.split("/")){
+    const [k,v]=p.split(":");
+    if(EXN[k]&&v&&v!==self) out.push(EXN[k]+" <b>"+esc(v)+"</b>");
+  }
+  return out.join("；");
+}
+function lemmaNote(e,clicked){
+  if(!e.lemmaOf) return "";
+  let how="";
+  for(const p of (e.ex||"").split("/")){const [k,v]=p.split(":");if(v===e.lemmaOf&&EXN[k]){how=EXN[k];break}}
+  return '<div class="from">'+esc(clicked)+" 是 <b>"+esc(e.word)+"</b> 的"+(how||"变形")+"</div>";
+}
+
+/* ---------- speech ---------- */
+const synth=window.speechSynthesis;
+let voice=null;
+function pickVoice(){
+  if(!synth) return;
+  const vs=synth.getVoices();
+  voice=vs.find(v=>/en[-_]GB/i.test(v.lang))||vs.find(v=>/^en/i.test(v.lang))||null;
+}
+if(synth){pickVoice();synth.onvoiceschanged=pickVoice}
+function say(t,rate){
+  if(!synth){toast("这台设备的浏览器不支持朗读");return}
+  synth.cancel();const u=new SpeechSynthesisUtterance(t);
+  if(voice)u.voice=voice;u.lang=voice?voice.lang:"en-GB";u.rate=rate||0.9;synth.speak(u);
+}
+
+/* ---------- on-device translation (Chrome 138+ desktop) ---------- */
+let translatorP=null;
+function canTranslate(){return "Translator" in self}
+async function translate(text){
+  if(!translatorP){
+    translatorP=(async()=>{
+      const a=await Translator.availability({sourceLanguage:"en",targetLanguage:"zh"});
+      if(a==="unavailable") throw new Error("unavailable");
+      return Translator.create({sourceLanguage:"en",targetLanguage:"zh"});
+    })();
+    translatorP.catch(()=>{translatorP=null});
+  }
+  const t=await translatorP;return t.translate(text);
+}
+
+/* ---------- book storage ---------- */
+function idb(){return new Promise((res,rej)=>{const r=indexedDB.open("annoreader",1);r.onupgradeneeded=()=>r.result.createObjectStore("b");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+async function putBook(buf,name){try{const db=await idb();db.transaction("b","readwrite").objectStore("b").put({buf,name},"last")}catch(e){}}
+async function getBook(){try{const db=await idb();return await new Promise(res=>{const r=db.transaction("b").objectStore("b").get("last");r.onsuccess=()=>res(r.result||null);r.onerror=()=>res(null)})}catch(e){return null}}
+
+/* ---------- parsing ---------- */
+function resolvePath(base,href){
+  const out=[];
+  for(const p of (base+href).split("/")){ if(p==="..")out.pop(); else if(p!=="."&&p!=="")out.push(p); }
+  return out.join("/");
+}
+const SEL="p,h1,h2,h3,h4,h5,h6,li,blockquote,pre,dt,dd";
+function extractBlocks(body){
+  if(!body) return [];
+  body.querySelectorAll("br").forEach(b=>b.replaceWith(" "));
+  body.querySelectorAll("script,style").forEach(b=>b.remove());
+  let els=[...body.querySelectorAll(SEL)].filter(e=>!e.querySelector(SEL));
+  if(!els.length) els=[...body.querySelectorAll("div")].filter(e=>!e.querySelector("div"));
+  if(!els.length && norm(body.textContent)) els=[body];
+  return els.map(e=>({text:norm(e.textContent),head:/^H\d$/.test(e.tagName)})).filter(b=>b.text);
+}
+async function parseEpub(buf){
+  if(!window.JSZip) throw new Error("缺少 lib 文件夹里的 jszip.min.js，请把整个文件夹一起复制。");
+  const zip=await JSZip.loadAsync(buf);
+  const cf=zip.file("META-INF/container.xml"); if(!cf) throw new Error("这不是一个有效的 EPUB 文件。");
+  const cdoc=new DOMParser().parseFromString(await cf.async("text"),"application/xml");
+  const rf=cdoc.getElementsByTagName("rootfile")[0]; if(!rf) throw new Error("EPUB 里找不到目录信息。");
+  const opfPath=rf.getAttribute("full-path");
+  const opf=new DOMParser().parseFromString(await zip.file(opfPath).async("text"),"application/xml");
+  const base=opfPath.includes("/")?opfPath.slice(0,opfPath.lastIndexOf("/")+1):"";
+  const te=opf.getElementsByTagNameNS("*","title")[0];
+  const manifest={};
+  for(const it of opf.getElementsByTagNameNS("*","item")) manifest[it.getAttribute("id")]={href:it.getAttribute("href")||"",type:it.getAttribute("media-type")||""};
+  const chapters=[];
+  for(const ref of opf.getElementsByTagNameNS("*","itemref")){
+    const m=manifest[ref.getAttribute("idref")]; if(!m) continue;
+    if(m.type && !/html/i.test(m.type)) continue;
+    let href=m.href.split("#")[0]; try{href=decodeURIComponent(href)}catch(e){}
+    const f=zip.file(resolvePath(base,href)); if(!f) continue;
+    const doc=new DOMParser().parseFromString(await f.async("text"),"text/html");
+    const blocks=extractBlocks(doc.body); if(!blocks.length) continue;
+    const h=blocks.find(b=>b.head);
+    let title=h?h.text:(blocks[0].text.length<60?blocks[0].text:"");
+    if(!title) title="第 "+(chapters.length+1)+" 部分";
+    if(title.length>42) title=title.slice(0,40)+"…";
+    chapters.push({title,blocks});
+  }
+  if(!chapters.length) throw new Error("没能从这个 EPUB 里读出正文。");
+  return {title:te?norm(te.textContent):"未命名的书",chapters};
+}
+function parseTxt(txt,name){
+  let paras=txt.split(/\r?\n\s*\r?\n/).map(norm).filter(Boolean);
+  if(paras.length<5) paras=txt.split(/\r?\n/).map(norm).filter(Boolean);
+  const chapters=[];
+  for(let i=0;i<paras.length;i+=60) chapters.push({title:"第 "+(chapters.length+1)+" 部分",blocks:paras.slice(i,i+60).map(t=>({text:t,head:false}))});
+  if(!chapters.length) throw new Error("这个文本文件是空的。");
+  return {title:name.replace(/\.txt$/i,""),chapters};
+}
+
+/* ---------- segmentation ---------- */
+const sSeg=window.Intl&&Intl.Segmenter?new Intl.Segmenter("en",{granularity:"sentence"}):null;
+const wSeg=window.Intl&&Intl.Segmenter?new Intl.Segmenter("en",{granularity:"word"}):null;
+function sentences(t){
+  if(sSeg) return [...sSeg.segment(t)].map(x=>x.segment.trim()).filter(Boolean);
+  return (t.match(/[^.!?]+(?:[.!?]+["'”’)]*|$)/g)||[t]).map(s=>s.trim()).filter(Boolean);
+}
+function wordsHTML(s){
+  const span=x=>'<span class="w'+(saved[x.toLowerCase()]?" saved":"")+'">'+esc(x)+"</span>";
+  if(wSeg){let h="";for(const x of wSeg.segment(s)) h+=x.isWordLike&&/[A-Za-z]/.test(x.segment)?span(x.segment):esc(x.segment);return h}
+  return s.split(/([A-Za-zÀ-ɏ]+(?:['’][A-Za-z]+)*)/).map((p,i)=>i%2?span(p):esc(p)).join("");
+}
+
+/* ---------- state ---------- */
+let book=null,cur=0,sents=[],sel=null;
+let saved=store.get("words")||{};
+const posKey=()=>"pos:"+hash(book.title);
+
+async function loadBuffer(buf,name){
+  const st=$("#status");st.className="status";st.textContent="正在打开《"+name+"》…";
+  try{
+    book=/\.txt$/i.test(name)?parseTxt(new TextDecoder().decode(buf),name):await parseEpub(buf);
+  }catch(e){
+    st.className="status bad";
+    st.textContent=(e&&e.message&&/[一-龥]/.test(e.message))?e.message:"这个文件打不开，请确认它是 EPUB 或 TXT 格式。";
+    return false;
+  }
+  st.textContent="";
+  $("#btitle").textContent=book.title;
+  document.title=book.title+" · 批注阅读器";
+  $("#chsel").innerHTML=book.chapters.map((c,i)=>'<option value="'+i+'">'+esc(c.title)+"</option>").join("");
+  $("#start").classList.add("hidden");$("#bar").classList.remove("hidden");$("#reader").classList.remove("hidden");
+  const p=store.get(posKey())||{ch:0,r:0};
+  showChapter(Math.min(p.ch||0,book.chapters.length-1),p.r||0);
+  return true;
+}
+async function openFile(file){
+  if(!file) return;
+  if(!/\.(epub|txt)$/i.test(file.name)){const st=$("#status");st.className="status bad";st.textContent="只支持 .epub 或 .txt 文件。";return}
+  const buf=await file.arrayBuffer();
+  if(await loadBuffer(buf,file.name)) putBook(buf,file.name);
+}
+
+function showChapter(i,ratio){
+  cur=i;$("#chsel").value=String(i);sents=[];closePanel(true);
+  const ch=book.chapters[i];const out=[];
+  for(const b of ch.blocks){
+    const inner=sentences(b.text).map(s=>{const id=sents.push(s)-1;return '<span class="s" data-s="'+id+'">'+wordsHTML(s)+"</span>"}).join(" ");
+    out.push(b.head?"<h2>"+inner+"</h2>":"<p>"+inner+"</p>");
+  }
+  out.push('<div class="chnav" lang="zh"><button id="prev"'+(i===0?" disabled":"")+'>上一部分</button><button id="next"'+(i===book.chapters.length-1?" disabled":"")+">下一部分</button></div>");
+  $("#text").innerHTML=out.join("");
+  $("#prev").onclick=()=>showChapter(cur-1,0);
+  $("#next").onclick=()=>showChapter(cur+1,0);
+  requestAnimationFrame(()=>{const se=document.scrollingElement;se.scrollTop=ratio?ratio*se.scrollHeight:0;savePos()});
+}
+let posT=0;
+function savePos(){ if(!book) return; const se=document.scrollingElement; store.set(posKey(),{ch:cur,r:se.scrollHeight?se.scrollTop/se.scrollHeight:0}) }
+addEventListener("scroll",()=>{clearTimeout(posT);posT=setTimeout(savePos,400)},{passive:true});
+
+/* ---------- panel ---------- */
+function clearMarks(){document.querySelectorAll(".s.on,.w.on").forEach(e=>e.classList.remove("on"))}
+function openPanel(){$("#aside").classList.add("open");document.body.classList.add("sheet")}
+function closePanel(reset){
+  $("#aside").classList.remove("open");document.body.classList.remove("sheet");
+  if(reset){sel=null;clearMarks();$("#panel").innerHTML=HINT}
+}
+function showTab(list){
+  $("#tNote").classList.toggle("on",!list);$("#tList").classList.toggle("on",list);
+  $("#panel").classList.toggle("hidden",list);$("#list").classList.toggle("hidden",!list);
+  if(list) renderList();
+}
+$("#close").onclick=()=>closePanel(false);
+$("#tNote").onclick=()=>showTab(false);
+$("#tList").onclick=()=>showTab(true);
+
+$("#text").addEventListener("click",e=>{
+  if(window.getSelection&&String(window.getSelection()).length) return;
+  const w=e.target.closest(".w"),s=e.target.closest(".s");
+  if(!s) return;
+  clearMarks();s.classList.add("on");
+  if(w) w.classList.add("on");
+  sel={id:+s.dataset.s,word:w?w.textContent:null};
+  showTab(false);renderPanel();openPanel();
+});
+
+function gtUrl(t){return "https://translate.google.com/?sl=en&tl=zh-CN&op=translate&text="+encodeURIComponent(t)}
+function bingUrl(t){return "https://www.bing.com/translator?from=en&to=zh-Hans&text="+encodeURIComponent(t)}
+
+function renderPanel(){
+  const my=sel;const s=sents[my.id];const long=s.length>220;
+  $("#panel").innerHTML=
+    (my.word?'<div id="wbox"><div class="wc"><span class="hint">正在查词典…</span></div></div>':"")+
+    '<div class="quote'+(long?" clip":"")+'" lang="en" id="q">'+esc(s)+"</div>"+
+    (long?'<button class="more" id="more">展开整句</button>':"")+
+    '<div class="row">'+
+      '<button class="ib" id="sSay">🔊 朗读整句</button>'+
+      (canTranslate()?'<button class="ib" id="sTr">翻译整句</button>':"")+
+      '<a class="ib" target="_blank" rel="noopener" href="'+gtUrl(s)+'">谷歌翻译</a>'+
+      '<a class="ib" target="_blank" rel="noopener" href="'+bingUrl(s)+'">必应翻译</a>'+
+      '<button class="ib" id="sCopy">复制这句</button>'+
+    "</div>"+
+    '<div id="trbox"></div>';
+  if(long) $("#more").onclick=()=>{$("#q").classList.remove("clip");$("#more").remove()};
+  $("#sSay").onclick=()=>say(s,0.85);
+  $("#sCopy").onclick=()=>copy(s);
+  if(canTranslate()) $("#sTr").onclick=async()=>{
+    const box=$("#trbox");box.innerHTML='<div class="tr"><span class="hint">正在翻译（第一次使用要先下载翻译模型，可能需要一分钟）…</span></div>';
+    try{const t=await translate(s);if(sel===my)box.innerHTML='<div class="tr"><span class="lab">机器翻译，仅供参考</span>'+esc(t)+"</div>"}
+    catch(e){if(sel===my)box.innerHTML='<div class="tr"><span class="hint">这台设备暂时用不了离线翻译，请点“谷歌翻译”或“必应翻译”。</span></div>'}
+  };
+  if(my.word) showWord(my);
+}
+async function copy(t){
+  try{await navigator.clipboard.writeText(t);toast("已复制")}
+  catch(e){const ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");toast("已复制")}catch(_){toast("复制失败，请长按手动复制")}ta.remove()}
+}
+async function showWord(my){
+  const e=await lookup(my.word);
+  if(sel!==my) return;
+  const box=$("#wbox");
+  if(!e){box.innerHTML='<div class="wc"><div class="hwl"><span class="hw" lang="en">'+esc(my.word)+'</span><button class="spk" id="wSay" aria-label="朗读">🔊</button></div><p class="miss">词典里没有收这个词，可能是人名地名、生僻词或作者自造的词。可以点下面的翻译按钮，或复制整句问 Claude。</p></div>';
+    $("#wSay").onclick=()=>say(my.word);return}
+  if(e.failed){box.innerHTML='<div class="wc"><p class="miss">词典文件没有加载成功。请确认 dict 文件夹和网页放在一起。</p></div>';return}
+  const key=e.word;const on=!!saved[key];
+  const isName=/\bname\b|faulkner/.test(e.tag||"");
+  const tags=(e.tag||"").split(/\s+/).map(t=>TAG[t]).filter(Boolean);
+  const fm=forms(e.ex,e.word);
+  const shown=(isName&&/^[A-Z]/.test(my.word)&&!e.lemmaOf)?e.word[0].toUpperCase()+e.word.slice(1):e.word;
+  box.innerHTML='<div class="wc">'+
+    '<div class="hwl"><span class="hw" lang="en">'+esc(shown)+"</span>"+
+      (e.ph?'<span class="ipa">/'+esc(e.ph)+"/</span>":"")+
+      '<button class="spk" id="wSay" aria-label="朗读">🔊</button>'+
+      '<button class="star'+(on?" on":"")+'" id="wStar">'+(on?"已加入生词本":"加入生词本")+"</button></div>"+
+    lemmaNote(e,my.word)+
+    (e.guessed?'<div class="from">按 <b>'+esc(e.guessed)+"</b> 查到的结果</div>":"")+
+    '<ul class="defs'+(isName?" name":"")+'">'+defLines(e.tr).map(d=>"<li>"+(d.pos?'<span class="pos">'+esc(d.pos)+"</span>":"")+"<span>"+esc(d.txt)+"</span></li>").join("")+"</ul>"+
+    ((fm||tags.length||e.col)?'<div class="meta">'+
+      (fm?"<div>词形变化："+fm+"</div>":"")+
+      (e.col?"<div>柯林斯词频星级：<b>"+"★".repeat(e.col)+"</b>（星越多越常用，最高五星）</div>":"")+
+      (tags.length?"<div>考试词表："+tags.join("、")+"</div>":"")+
+    "</div>":"")+
+  "</div>";
+  $("#wSay").onclick=()=>say(e.word);
+  $("#wStar").onclick=()=>{
+    if(saved[key]) delete saved[key];
+    else saved[key]={w:e.word,ph:e.ph,d:defLines(e.tr).slice(0,2).map(d=>(d.pos?d.pos+" ":"")+d.txt).join("；"),ctx:sents[my.id].slice(0,240),book:book.title,t:Date.now()};
+    store.set("words",saved);updateCount();
+    const b=$("#wStar");b.classList.toggle("on",!!saved[key]);b.textContent=saved[key]?"已加入生词本":"加入生词本";
+    document.querySelectorAll("#text .w").forEach(x=>x.classList.toggle("saved",!!saved[x.textContent.toLowerCase()]));
+  };
+}
+
+/* ---------- word list ---------- */
+function updateCount(){const n=Object.keys(saved).length;$("#cnt").textContent=n?"("+n+")":""}
+function renderList(){
+  const items=Object.values(saved).sort((a,b)=>b.t-a.t);
+  if(!items.length){$("#list").innerHTML='<p class="hint">还没有生词。查词时点“加入生词本”，词会连同原句一起存在这里。</p>';return}
+  $("#list").innerHTML='<div class="row"><button class="ib" id="exp">导出为表格（CSV）</button></div><ul class="wl">'+
+    items.map(x=>'<li><button class="x" data-k="'+esc(x.w)+'">删除</button><b lang="en">'+esc(x.w)+"</b> "+(x.ph?'<span class="ipa">/'+esc(x.ph)+"/</span>":"")+"<div>"+esc(x.d)+'</div><div class="ctx" lang="en">'+esc(x.ctx)+"</div></li>").join("")+"</ul>";
+  $("#list").querySelectorAll(".x").forEach(b=>b.onclick=()=>{delete saved[b.dataset.k];store.set("words",saved);updateCount();renderList()});
+  $("#exp").onclick=()=>{
+    const q=v=>'"'+String(v||"").replace(/"/g,'""')+'"';
+    const csv="﻿单词,音标,释义,原句,书名\n"+items.map(x=>[x.w,x.ph,x.d,x.ctx,x.book].map(q).join(",")).join("\n");
+    const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([csv],{type:"text/csv"}));a.download="生词本.csv";a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  };
+}
+updateCount();
+
+/* ---------- controls ---------- */
+$("#chsel").onchange=e=>showChapter(+e.target.value,0);
+let fs=store.get("fs")||20;
+const applyFs=()=>root.style.setProperty("--fs",fs+"px");applyFs();
+$("#fsm").onclick=()=>{fs=Math.max(15,fs-1);applyFs();store.set("fs",fs)};
+$("#fsp").onclick=()=>{fs=Math.min(28,fs+1);applyFs();store.set("fs",fs)};
+$("#swap").onclick=()=>{closePanel(true);$("#reader").classList.add("hidden");$("#bar").classList.add("hidden");$("#start").classList.remove("hidden");showResume()};
+$("#pick").onclick=()=>$("#file").click();
+$("#file").onchange=e=>{openFile(e.target.files[0]);e.target.value=""};
+const drop=$("#drop");
+["dragenter","dragover"].forEach(t=>document.addEventListener(t,e=>{e.preventDefault();drop.classList.add("over")}));
+["dragleave","drop"].forEach(t=>document.addEventListener(t,e=>{e.preventDefault();if(t==="drop"||!e.relatedTarget)drop.classList.remove("over")}));
+document.addEventListener("drop",e=>{const f=e.dataTransfer&&e.dataTransfer.files[0];if(f)openFile(f)});
+$("#panel").innerHTML=HINT;
+
+async function showResume(){
+  const b=await getBook();
+  if(!b){$("#resumeWrap").classList.add("hidden");return}
+  $("#resume").textContent="继续读上次的书："+b.name.replace(/\.(epub|txt)$/i,"").slice(0,40);
+  $("#resume").onclick=()=>loadBuffer(b.buf,b.name);
+  $("#resumeWrap").classList.remove("hidden");
+}
+showResume();
+})();
+</script>
+</body>
+</html>
