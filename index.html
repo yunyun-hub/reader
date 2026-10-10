@@ -48,7 +48,20 @@ button{cursor:pointer}
 .ib{background:none;border:1px solid var(--rule);border-radius:6px;padding:5px 9px;font-size:14px;white-space:nowrap}
 .ib:hover{border-color:var(--muted)}
 
-.start{min-height:calc(100vh - 20px);display:flex;align-items:center;justify-content:center;padding:32px 20px}
+.start{min-height:calc(100vh - 20px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:32px 20px}
+.shelf{max-width:520px;width:100%}
+.shelf h2{font-size:15px;font-weight:600;margin:0 0 10px;display:flex;align-items:baseline;gap:8px}
+.shelf h2 span{font-weight:400;color:var(--muted);font-size:13px}
+.shelf ul{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
+.shelf li{display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--rule)}
+.bk{flex:1;min-width:0;text-align:left;background:none;border:0;padding:12px 4px;display:flex;flex-direction:column;gap:4px}
+.bk:hover .bt{color:var(--accent)}
+.bt{font-family:var(--text);font-size:18px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bm{font-size:12.5px;color:var(--muted)}
+.pb{display:block;height:3px;background:var(--rule);border-radius:2px;overflow:hidden;margin-top:2px}
+.pb i{display:block;height:100%;background:var(--accent)}
+.del{background:none;border:0;color:var(--muted);font-size:13px;padding:8px}
+.del:hover{color:var(--err)}
 .drop{max-width:520px;width:100%;border:1.5px dashed var(--muted);border-radius:14px;padding:44px 28px;text-align:center}
 .drop.over{border-color:var(--accent);background:var(--accent-soft)}
 .drop h1{font-family:var(--text);font-weight:500;font-size:clamp(28px,6vw,40px);line-height:1.15;margin:0 0 14px}
@@ -133,7 +146,7 @@ aside{background:var(--sheet);border-left:1px solid var(--rule)}
   <button class="ib" id="fsm" aria-label="缩小字号">A−</button>
   <button class="ib" id="fsp" aria-label="放大字号">A+</button>
   <button class="ib" id="theme" aria-label="切换深色或浅色">◐</button>
-  <button class="ib" id="swap">换书</button>
+  <button class="ib" id="swap">书架</button>
 </div>
 
 <section class="start" id="start">
@@ -142,10 +155,10 @@ aside{background:var(--sheet);border-left:1px solid var(--rule)}
     <p>支持 EPUB 和 TXT 文件。读的时候点任意单词查离线词典，点句子可以听发音、看翻译。</p>
     <button class="pick" id="pick">选择文件</button>
     <input type="file" id="file" accept=".epub,.txt,application/epub+zip,text/plain" hidden>
-    <small>电脑上也可以直接把文件拖进这个框。<br>书和生词本只保存在这台设备上，不上传到任何地方。</small>
-    <div class="resume hidden" id="resumeWrap"><button class="ib" id="resume"></button></div>
+    <small>打开过的书会自动放进下面的书架。电脑上也可以直接把文件拖进这个框。<br>书和生词本只保存在这台设备上，不上传到任何地方。</small>
     <div class="status" id="status" role="status"></div>
   </div>
+  <div class="shelf hidden" id="shelf"></div>
 </section>
 
 <div class="layout hidden" id="reader">
@@ -310,9 +323,29 @@ async function translate(text){
 }
 
 /* ---------- book storage ---------- */
-function idb(){return new Promise((res,rej)=>{const r=indexedDB.open("annoreader",1);r.onupgradeneeded=()=>r.result.createObjectStore("b");r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
-async function putBook(buf,name){try{const db=await idb();db.transaction("b","readwrite").objectStore("b").put({buf,name},"last")}catch(e){}}
-async function getBook(){try{const db=await idb();return await new Promise(res=>{const r=db.transaction("b").objectStore("b").get("last");r.onsuccess=()=>res(r.result||null);r.onerror=()=>res(null)})}catch(e){return null}}
+function idb(){return new Promise((res,rej)=>{
+  const r=indexedDB.open("annoreader",2);
+  r.onupgradeneeded=()=>{const d=r.result;
+    if(!d.objectStoreNames.contains("b")) d.createObjectStore("b");
+    if(!d.objectStoreNames.contains("files")) d.createObjectStore("files");
+    if(!d.objectStoreNames.contains("meta")) d.createObjectStore("meta",{keyPath:"id"});};
+  r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+function req(r){return new Promise((res,rej)=>{r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)})}
+function tx(db,stores,mode){return db.transaction(stores,mode)}
+async function saveBook(id,buf,meta){try{const db=await idb();const t=tx(db,["files","meta"],"readwrite");t.objectStore("files").put(buf,id);t.objectStore("meta").put(meta);await new Promise(r=>t.oncomplete=r)}catch(e){}}
+async function putMeta(meta){try{const db=await idb();await req(tx(db,"meta","readwrite").objectStore("meta").put(meta))}catch(e){}}
+async function allMeta(){try{const db=await idb();return (await req(tx(db,"meta").objectStore("meta").getAll()))||[]}catch(e){return []}}
+async function getFile(id){try{const db=await idb();return await req(tx(db,"files").objectStore("files").get(id))}catch(e){return null}}
+async function delBook(id){try{const db=await idb();const t=tx(db,["files","meta"],"readwrite");t.objectStore("files").delete(id);t.objectStore("meta").delete(id);await new Promise(r=>t.oncomplete=r)}catch(e){}}
+async function migrateOld(){
+  try{const db=await idb();const old=await req(tx(db,"b").objectStore("b").get("last"));
+    if(!old||!old.buf) return;
+    const id=hash(old.name+":"+old.buf.byteLength);
+    const have=await req(tx(db,"meta").objectStore("meta").get(id));
+    if(!have) await saveBook(id,old.buf,{id,name:old.name,title:old.name.replace(/\.(epub|txt)$/i,""),chs:0,added:Date.now(),opened:Date.now()-1});
+    await req(tx(db,"b","readwrite").objectStore("b").delete("last"));
+  }catch(e){}
+}
 
 /* ---------- parsing ---------- */
 function resolvePath(base,href){
@@ -382,11 +415,11 @@ function wordsHTML(s){
 }
 
 /* ---------- state ---------- */
-let book=null,cur=0,sents=[],sel=null;
+let bookId=null,book=null,cur=0,sents=[],sel=null;
 let saved=store.get("words")||{};
 const posKey=()=>"pos:"+hash(book.title);
 
-async function loadBuffer(buf,name){
+async function loadBuffer(buf,name,id){
   const st=$("#status");st.className="status";st.textContent="正在打开《"+name+"》…";
   try{
     book=/\.txt$/i.test(name)?parseTxt(new TextDecoder().decode(buf),name):await parseEpub(buf);
@@ -400,6 +433,9 @@ async function loadBuffer(buf,name){
   document.title=book.title+" · 批注阅读器";
   $("#chsel").innerHTML=book.chapters.map((c,i)=>'<option value="'+i+'">'+esc(c.title)+"</option>").join("");
   $("#start").classList.add("hidden");$("#bar").classList.remove("hidden");$("#reader").classList.remove("hidden");
+  bookId=id;
+  const old=(await allMeta()).find(m=>m.id===id);
+  putMeta({...(old||{added:Date.now()}),id,name,title:book.title,chs:book.chapters.length,opened:Date.now()});
   const p=store.get(posKey())||{ch:0,r:0};
   showChapter(Math.min(p.ch||0,book.chapters.length-1),p.r||0);
   return true;
@@ -408,7 +444,8 @@ async function openFile(file){
   if(!file) return;
   if(!/\.(epub|txt)$/i.test(file.name)){const st=$("#status");st.className="status bad";st.textContent="只支持 .epub 或 .txt 文件。";return}
   const buf=await file.arrayBuffer();
-  if(await loadBuffer(buf,file.name)) putBook(buf,file.name);
+  const id=hash(file.name+":"+buf.byteLength);
+  if(await loadBuffer(buf,file.name,id)) await saveBook(id,buf,{id,name:file.name,title:book.title,chs:book.chapters.length,added:Date.now(),opened:Date.now()});
 }
 
 function showChapter(i,ratio){
@@ -544,7 +581,7 @@ let fs=store.get("fs")||20;
 const applyFs=()=>root.style.setProperty("--fs",fs+"px");applyFs();
 $("#fsm").onclick=()=>{fs=Math.max(15,fs-1);applyFs();store.set("fs",fs)};
 $("#fsp").onclick=()=>{fs=Math.min(28,fs+1);applyFs();store.set("fs",fs)};
-$("#swap").onclick=()=>{closePanel(true);$("#reader").classList.add("hidden");$("#bar").classList.add("hidden");$("#start").classList.remove("hidden");showResume()};
+$("#swap").onclick=()=>{closePanel(true);$("#reader").classList.add("hidden");$("#bar").classList.add("hidden");$("#start").classList.remove("hidden");showShelf()};
 $("#pick").onclick=()=>$("#file").click();
 $("#file").onchange=e=>{openFile(e.target.files[0]);e.target.value=""};
 const drop=$("#drop");
@@ -553,14 +590,43 @@ const drop=$("#drop");
 document.addEventListener("drop",e=>{const f=e.dataTransfer&&e.dataTransfer.files[0];if(f)openFile(f)});
 $("#panel").innerHTML=HINT;
 
-async function showResume(){
-  const b=await getBook();
-  if(!b){$("#resumeWrap").classList.add("hidden");return}
-  $("#resume").textContent="继续读上次的书："+b.name.replace(/\.(epub|txt)$/i,"").slice(0,40);
-  $("#resume").onclick=()=>loadBuffer(b.buf,b.name);
-  $("#resumeWrap").classList.remove("hidden");
+function progress(m){
+  const p=store.get("pos:"+hash(m.title));
+  if(!p||!m.chs) return 0;
+  return Math.min(100,Math.round(((p.ch||0)+(p.r||0))/m.chs*100));
 }
-showResume();
+function ago(t){
+  const d=Math.floor((Date.now()-t)/86400000);
+  if(d<=0) return "今天";if(d===1) return "昨天";if(d<30) return d+" 天前";
+  const x=new Date(t);return x.getFullYear()+"-"+(x.getMonth()+1)+"-"+x.getDate();
+}
+async function showShelf(){
+  const list=(await allMeta()).sort((a,b)=>b.opened-a.opened);
+  const el=$("#shelf");
+  if(!list.length){el.classList.add("hidden");return}
+  el.classList.remove("hidden");
+  el.innerHTML='<h2>我的书架 <span>'+list.length+' 本</span></h2><ul>'+list.map(m=>{
+    const pc=progress(m);
+    return '<li><button class="bk" data-id="'+esc(m.id)+'"><span class="bt" lang="en">'+esc(m.title)+'</span>'+
+      '<span class="bm">'+(pc?"读到 "+pc+"%":"还没开始读")+' · 上次打开：'+ago(m.opened)+'</span>'+
+      '<span class="pb"><i style="width:'+pc+'%"></i></span></button>'+
+      '<button class="del" data-id="'+esc(m.id)+'" aria-label="从书架删除">删除</button></li>';
+  }).join("")+"</ul>";
+  el.querySelectorAll(".bk").forEach(b=>b.onclick=async()=>{
+    const m=list.find(x=>x.id===b.dataset.id);
+    const st=$("#status");st.className="status";st.textContent="正在打开…";
+    const buf=await getFile(m.id);
+    if(!buf){st.className="status bad";st.textContent="这本书的文件找不到了，请重新选择文件打开。";return}
+    loadBuffer(buf,m.name,m.id);
+  });
+  el.querySelectorAll(".del").forEach(b=>b.onclick=async()=>{
+    const m=list.find(x=>x.id===b.dataset.id);
+    if(!confirm("从书架删除《"+m.title+"》？\n阅读进度会一起删除，生词本里的词会保留。")) return;
+    await delBook(m.id);try{localStorage.removeItem("pos:"+hash(m.title))}catch(e){}
+    showShelf();
+  });
+}
+migrateOld().then(showShelf);
 })();
 </script>
 </body>
