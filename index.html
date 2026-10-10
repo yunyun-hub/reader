@@ -12,7 +12,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
-<script src="lib/jszip.min.js"></script>
+<script src="jszip.min.js"></script>
 <style>
 :root{
   --paper:#ECEEE8; --sheet:#F7F8F4; --ink:#1F2726; --muted:#66706C; --rule:#CDD2CA;
@@ -199,7 +199,7 @@ function loadLetter(L){
   if(window.__D[L]) return Promise.resolve(window.__D[L]);
   if(loading[L]) return loading[L];
   return loading[L]=new Promise(res=>{
-    const sc=document.createElement("script");sc.src="dict/"+L+".js";
+    const sc=document.createElement("script");sc.src="dict-"+L+".js";
     sc.onload=()=>res(window.__D[L]||{});
     sc.onerror=()=>{delete loading[L];res(null)};
     document.head.appendChild(sc);
@@ -331,7 +331,7 @@ function extractBlocks(body){
   return els.map(e=>({text:norm(e.textContent),head:/^H\d$/.test(e.tagName)})).filter(b=>b.text);
 }
 async function parseEpub(buf){
-  if(!window.JSZip) throw new Error("缺少 lib 文件夹里的 jszip.min.js，请把整个文件夹一起复制。");
+  if(!window.JSZip) throw new Error("缺少 jszip.min.js 文件，请把所有文件一起上传或复制。");
   const zip=await JSZip.loadAsync(buf);
   const cf=zip.file("META-INF/container.xml"); if(!cf) throw new Error("这不是一个有效的 EPUB 文件。");
   const cdoc=new DOMParser().parseFromString(await cf.async("text"),"application/xml");
@@ -491,7 +491,7 @@ async function showWord(my){
   const box=$("#wbox");
   if(!e){box.innerHTML='<div class="wc"><div class="hwl"><span class="hw" lang="en">'+esc(my.word)+'</span><button class="spk" id="wSay" aria-label="朗读">🔊</button></div><p class="miss">词典里没有收这个词，可能是人名地名、生僻词或作者自造的词。可以点下面的翻译按钮，或复制整句问 Claude。</p></div>';
     $("#wSay").onclick=()=>say(my.word);return}
-  if(e.failed){box.innerHTML='<div class="wc"><p class="miss">词典文件没有加载成功。请确认 dict 文件夹和网页放在一起。</p></div>';return}
+  if(e.failed){box.innerHTML='<div class="wc"><p class="miss">词典文件没有加载成功。请确认 dict-a.js 到 dict-z.js 这些词典文件和网页放在一起。</p></div>';return}
   const key=e.word;const on=!!saved[key];
   const isName=/\bname\b|faulkner/.test(e.tag||"");
   const tags=(e.tag||"").split(/\s+/).map(t=>TAG[t]).filter(Boolean);
