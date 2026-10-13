@@ -13,8 +13,10 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 <link rel="manifest" href="manifest.json">
 <script src="jszip.min.js"></script>
+<script src="lemma.js" defer></script>
 <style>
 :root{
+  --l-y:#C9A227;--l-g:#3E9A5A;--l-b:#3D63C9;--l-p:#C94A7C;
   --paper:#ECEEE8; --sheet:#F7F8F4; --ink:#1F2726; --muted:#66706C; --rule:#CDD2CA;
   --mark:#F2DE8E; --accent:#2F45A0; --accent-soft:#DDE2F5; --err:#9A2B2B; --ok:#2D6A4F;
   --fs:20px;
@@ -50,6 +52,8 @@ button{cursor:pointer}
 
 .start{min-height:calc(100vh - 20px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:32px 20px}
 .shelf{max-width:520px;width:100%}
+.offline{max-width:520px;width:100%;text-align:center}
+.offline .hint{font-size:13px;margin-top:8px}
 .shelf h2{font-size:15px;font-weight:600;margin:0 0 10px;display:flex;align-items:baseline;gap:8px}
 .shelf h2 span{font-weight:400;color:var(--muted);font-size:13px}
 .shelf ul{list-style:none;margin:0;padding:0;border-top:1px solid var(--rule)}
@@ -125,6 +129,48 @@ aside{background:var(--sheet);border-left:1px solid var(--rule)}
 .wl .x{float:right;background:none;border:0;color:var(--muted);font-size:13px}
 .wl .ctx{color:var(--muted);font-family:var(--text);font-size:14px}
 
+mark.hl{color:inherit;border-radius:0;padding:0;background:var(--hl-bg);box-shadow:inset 0 -2px 0 var(--hl-line);cursor:pointer}
+mark.hl.c-y,.dot.c-y{--hl-bg:rgba(242,205,80,.38);--hl-line:#C9A227;--dot:#E3BC3A}
+mark.hl.c-g,.dot.c-g{--hl-bg:rgba(110,190,130,.30);--hl-line:#3E9A5A;--dot:#4FAE6B}
+mark.hl.c-b,.dot.c-b{--hl-bg:rgba(110,150,235,.28);--hl-line:#3D63C9;--dot:#4C74D8}
+mark.hl.c-p,.dot.c-p{--hl-bg:rgba(235,120,160,.28);--hl-line:#C94A7C;--dot:#DB5E8E}
+mark.hl.end.has-note::after{content:"✎";font-size:.62em;vertical-align:super;margin-left:1px;color:var(--hl-line);font-family:var(--zh)}
+mark.hl.flash{animation:flash 1.4s ease}
+@keyframes flash{0%,60%{box-shadow:inset 0 -2px 0 var(--hl-line),0 0 0 3px var(--hl-line)}100%{box-shadow:inset 0 -2px 0 var(--hl-line)}}
+.dot{width:24px;height:24px;border-radius:50%;border:2px solid var(--sheet);background:var(--dot);box-shadow:0 0 0 1px var(--rule);padding:0;flex:none}
+.dot.on{box-shadow:0 0 0 2px var(--ink)}
+.selbar{position:fixed;z-index:50;display:flex;align-items:center;gap:6px;background:var(--sheet);border:1px solid var(--rule);border-radius:10px;padding:6px 8px;box-shadow:0 6px 24px rgba(0,0,0,.18);font-size:14px}
+.selbar button:not(.dot){background:none;border:0;padding:4px 6px;border-radius:6px;white-space:nowrap}
+.selbar button:not(.dot):hover{background:var(--accent-soft)}
+.selbar .sep{width:1px;height:20px;background:var(--rule)}
+.pc{border:1px solid var(--accent);border-radius:10px;padding:12px 14px;margin-bottom:14px;background:var(--paper)}
+.pct{font-size:12.5px;color:var(--accent);margin-bottom:6px}
+.pi{padding:8px 0;border-top:1px solid var(--rule)}
+.pi:first-of-type{border-top:0;padding-top:2px}
+.pk{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pk b{font-family:var(--text);font-size:18px}
+.pk .star{margin-left:auto}
+.spk.sm{width:26px;height:26px;line-height:24px;font-size:12px}
+.star.sm{padding:2px 7px;font-size:12px}
+.ptr{font-size:14.5px;line-height:1.65;margin-top:4px}
+.online{font-size:12.5px;color:var(--muted);margin-top:10px}
+.online a{color:var(--accent);margin-left:8px}
+.nc{border:1px solid var(--rule);border-left:4px solid var(--hl-line);border-radius:8px;padding:10px 12px;margin-bottom:14px;background:var(--paper)}
+.nc .nq{font-family:var(--text);font-size:15px;line-height:1.55}
+.nc .nn{font-size:14px;line-height:1.7;margin-top:6px;white-space:pre-wrap}
+.nc .row{margin:8px 0 0}
+.nl{list-style:none;margin:0;padding:0}
+.nl h4{font-size:13px;color:var(--muted);font-weight:500;margin:16px 0 6px}
+.nl li{border-left:4px solid var(--hl-line);padding:6px 0 6px 10px;margin-bottom:10px}
+.nl .nq{font-family:var(--text);font-size:15px;line-height:1.55;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.nl .nn{font-size:13.5px;line-height:1.65;margin-top:4px;white-space:pre-wrap}
+.nl .act{display:flex;gap:12px;margin-top:4px}
+.nl .act button{background:none;border:0;padding:0;font-size:12.5px;color:var(--accent)}
+.nl .act button.del{color:var(--muted)}
+.colors{display:flex;gap:10px;margin:2px 0 4px}
+.dlgf textarea{width:100%;padding:10px 12px;border:1px solid var(--rule);border-radius:8px;background:var(--paper);color:var(--ink);font:inherit;font-size:15px;line-height:1.6;resize:vertical}
+.dlgf .quote{max-height:7.5em;overflow:auto;margin:0}
+.ib.danger{color:var(--err)}
 dialog{border:1px solid var(--rule);border-radius:14px;background:var(--sheet);color:var(--ink);padding:0;width:min(440px,calc(100vw - 32px))}
 dialog::backdrop{background:rgba(0,0,0,.35)}
 .dlgf{padding:22px;font-size:14.5px;line-height:1.7;display:flex;flex-direction:column;gap:8px}
@@ -170,6 +216,7 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
     <div class="status" id="status" role="status"></div>
   </div>
   <div class="shelf hidden" id="shelf"></div>
+  <div class="offline hidden" id="offline"><button class="ib" id="dlAll">下载全部词典，断网也能查（约 50MB）</button><div class="hint" id="dlMsg"></div></div>
 </section>
 
 <div class="layout hidden" id="reader">
@@ -177,15 +224,30 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
   <aside id="aside" aria-label="注解">
     <div class="pin">
       <div class="ph">
-        <div class="tabs"><button class="tab on" id="tNote">注解</button><button class="tab" id="tList">生词本 <span id="cnt"></span></button></div>
+        <div class="tabs"><button class="tab on" id="tNote">注解</button><button class="tab" id="tNotes">笔记 <span id="ncnt"></span></button><button class="tab" id="tList">生词本 <span id="cnt"></span></button></div>
         <button class="ib close" id="close">收起</button>
       </div>
       <div id="panel"></div>
+      <div id="notes" class="hidden"></div>
       <div id="list" class="hidden"></div>
     </div>
   </aside>
 </div>
 <div class="toast" id="toast" role="status"></div>
+<div class="selbar hidden" id="selbar" role="toolbar" aria-label="选中文字的操作">
+  <button class="dot c-y" data-c="y" aria-label="黄色划线"></button><button class="dot c-g" data-c="g" aria-label="绿色划线"></button><button class="dot c-b" data-c="b" aria-label="蓝色划线"></button><button class="dot c-p" data-c="p" aria-label="粉色划线"></button>
+  <span class="sep"></span>
+  <button data-a="note">笔记</button><button data-a="look">查词组</button><button data-a="copy">复制</button>
+</div>
+<dialog id="ndlg">
+  <form method="dialog" class="dlgf">
+    <h3>笔记</h3>
+    <div class="quote" lang="en" id="nq"></div>
+    <div class="colors" id="ncol"><button type="button" class="dot c-y" data-c="y" aria-label="黄色"></button><button type="button" class="dot c-g" data-c="g" aria-label="绿色"></button><button type="button" class="dot c-b" data-c="b" aria-label="蓝色"></button><button type="button" class="dot c-p" data-c="p" aria-label="粉色"></button></div>
+    <textarea id="nt" rows="5" placeholder="写下你的理解、翻译或想法（可以不写，只保留划线）"></textarea>
+    <div class="dlgb"><button value="del" class="ib danger">删除划线</button><span class="sp"></span><button value="cancel" class="ib">取消</button><button value="save" class="pick">保存</button></div>
+  </form>
+</dialog>
 <dialog id="vdlg">
   <form method="dialog" class="dlgf">
     <h3>朗读声音</h3>
@@ -211,7 +273,7 @@ const store={
 function hash(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)}
 let toastT=0;
 function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("on"),1800)}
-const HINT='<p class="hint">点正文里的任意单词，这里会显示词典释义。点句子里的标点或空白处，可以只选中整句。</p>';
+const HINT='<p class="hint">点任意单词：查释义，并自动找出它在这句话里的固定搭配。<br>拖动选中一段文字（手机上长按后拖动）：可以划线、写笔记、查词组。<br>点句子里的标点或空白处：只选中整句。</p>';
 
 /* ---------- offline service (only when hosted over https) ---------- */
 if("serviceWorker" in navigator && location.protocol==="https:"){
@@ -271,7 +333,17 @@ function candidates(raw){
   if(w.includes("-")) w.split("-").forEach(add);
   return c;
 }
+const INFL=/的(过去式|过去分词|现在分词|复数|第三人称单数|比较级|最高级)|^(过去式|过去分词|现在分词|复数)/;
 async function lookup(raw){
+  const w0=raw.toLowerCase().replace(/[’‘]/g,"'");
+  const L=window.__L||{};
+  if(L[w0]){
+    const own=await entry(w0,1);
+    if(!own||own.tr.length<40&&INFL.test(own.tr)){
+      const base=await entry(L[w0][0],1);
+      if(base&&!base.failed) return {...base,lemmaOf:w0};
+    }
+  }
   let offline=false;
   for(const c of candidates(raw)){
     const e=await entry(c,0);
@@ -312,6 +384,109 @@ function lemmaNote(e,clicked){
   let how="";
   for(const p of (e.ex||"").split("/")){const [k,v]=p.split(":");if(v===e.lemmaOf&&EXN[k]){how=EXN[k];break}}
   return '<div class="from">'+esc(clicked)+" 是 <b>"+esc(e.word)+"</b> 的"+(how||"变形")+"</div>";
+}
+
+/* ---------- phrases ---------- */
+window.__P=window.__P||{};
+const ploading={};
+function loadPhr(L){
+  if(window.__P[L]) return Promise.resolve(window.__P[L]);
+  if(ploading[L]) return ploading[L];
+  return ploading[L]=new Promise(res=>{
+    const sc=document.createElement("script");sc.src="phr-"+L+".js";
+    sc.onload=()=>res(window.__P[L]||{});
+    sc.onerror=()=>{delete ploading[L];res(null)};
+    document.head.appendChild(sc);
+  });
+}
+const POSS=new Set(["my","your","his","her","its","our","their","one's","whose"]);
+const REFL=new Set(["myself","yourself","himself","herself","itself","ourselves","yourselves","themselves","oneself"]);
+const ART=new Set(["a","an","the"]);
+const PH_OBJ=new Set(["sb","sth","someone","something","somebody"]);
+const PH_POSS=new Set(["one's","sb's","someone's","somebody's"]);
+const STOP=new Set(["a","an","the","of","to","in","on","at","by","for","with","and","or","but","is","be","it","this","that","as","from","into","i","you","he","she","we","they","not","no","so","if","all","any","some"]);
+const formCache={};
+async function tokForms(raw){
+  const w=raw.toLowerCase().replace(/[’‘]/g,"'");
+  if(formCache[w]) return formCache[w];
+  const set=new Set([w]);
+  const L=window.__L||{};
+  (L[w]||[]).forEach(x=>set.add(x));
+  for(const c of candidates(w)){
+    set.add(c);
+    const e=await getRaw(c);
+    if(typeof e==="string"&&e[0]==="@") set.add(e.slice(1));
+  }
+  return formCache[w]=set;
+}
+function matchFrom(pw,k,toks,forms,pos){
+  if(k===pw.length) return pos;
+  const p=pw[k];
+  const gapOk=pos<toks.length && !(pos>0 && toks[pos-1].brk);
+  if(ART.has(p)){
+    if(gapOk && forms[pos].has(p)){const r=matchFrom(pw,k+1,toks,forms,pos+1);if(r>0)return r}
+    return matchFrom(pw,k+1,toks,forms,pos);
+  }
+  if(!gapOk) return -1;
+  if(PH_OBJ.has(p)){
+    for(let n=1;n<=3&&pos+n<=toks.length;n++){
+      if(n>1&&toks[pos+n-2].brk) break;
+      const r=matchFrom(pw,k+1,toks,forms,pos+n);if(r>0)return r;
+    }
+    return -1;
+  }
+  const t=toks[pos].t.toLowerCase().replace(/[’‘]/g,"'");
+  if(PH_POSS.has(p)) return (POSS.has(t)||/'s$/.test(t))?matchFrom(pw,k+1,toks,forms,pos+1):-1;
+  if(p==="oneself") return REFL.has(t)?matchFrom(pw,k+1,toks,forms,pos+1):-1;
+  return forms[pos].has(p)?matchFrom(pw,k+1,toks,forms,pos+1):-1;
+}
+async function phrasesIn(toks){
+  const forms=await Promise.all(toks.map(x=>tokForms(x.t)));
+  const res=[],seen=new Set();
+  for(let i=0;i<toks.length;i++){
+    for(const f of forms[i]){
+      if(!/^[a-z]/.test(f)) continue;
+      const P=await loadPhr(f[0]);if(!P) continue;
+      const list=P[f];if(!list) continue;
+      for(const [key,tr] of list){
+        if(seen.has(key)) continue;
+        const pw=key.split(" ");
+        if(pw.every(x=>STOP.has(x)||PH_OBJ.has(x)||PH_POSS.has(x))) continue;
+        const end=matchFrom(pw,1,toks,forms,i+1);
+        if(end>0){seen.add(key);res.push({key,tr,i,j:end})}
+      }
+    }
+  }
+  const lit=m=>m.key.split(" ").filter(x=>!PH_OBJ.has(x)&&!PH_POSS.has(x)&&x!=="oneself").length;
+  const keep=res.filter(m=>!res.some(o=>o!==m&&o.i<=m.i&&m.j<=o.j&&((o.j-o.i)>(m.j-m.i)||lit(o)>lit(m))));
+  return keep.sort((a,b)=>lit(b)-lit(a)||(b.j-b.i)-(a.j-a.i));
+}
+function cambUrl(t){return "https://dictionary.cambridge.org/dictionary/english-chinese-simplified/"+encodeURIComponent(t.toLowerCase().trim().replace(/\s+/g,"-"))}
+function ydUrl(t){return "https://www.youdao.com/result?word="+encodeURIComponent(t.trim())+"&lang=en"}
+function onlineLinks(t){
+  return '<div class="online">在线词典：<a target="_blank" rel="noopener" href="'+cambUrl(t)+'">剑桥</a><a target="_blank" rel="noopener" href="'+ydUrl(t)+'">有道</a></div>';
+}
+function phraseCard(list,toks,title){
+  if(!list.length) return "";
+  return '<div class="pc"><div class="pct">'+title+'</div>'+list.slice(0,6).map(m=>{
+    const seen=toks.slice(m.i,m.j).map(x=>x.t).join(" ");
+    const lines=m.tr.split("\n").filter(x=>x&&x!=="——");
+    return '<div class="pi"><div class="pk"><b lang="en">'+esc(m.key)+'</b>'+
+      '<button class="spk sm" data-say="'+esc(seen)+'" aria-label="朗读">🔊</button>'+
+      '<button class="star sm'+(saved[m.key]?" on":"")+'" data-ph="'+esc(m.key)+'">'+(saved[m.key]?"已收藏":"收藏")+'</button></div>'+
+      (seen.toLowerCase()!==m.key?'<div class="from">原文：<span lang="en">'+esc(seen)+'</span></div>':"")+
+      '<div class="ptr">'+lines.map(esc).join("<br>")+"</div></div>";
+  }).join("")+(list.slice(0,6).some(m=>/\b(sb|sth)\b/.test(m.key))?'<div class="from">sb = somebody（某人）；sth = something（某事物）；sb\'s = 某人的</div>':"")+"</div>";
+}
+function wirePhrase(box,list,ctx){
+  box.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>say(b.dataset.say));
+  box.querySelectorAll("[data-ph]").forEach(b=>b.onclick=()=>{
+    const k=b.dataset.ph;const m=list.find(x=>x.key===k);
+    if(saved[k]) delete saved[k];
+    else saved[k]={w:k,ph:"",d:m.tr.split("\n").filter(x=>x!=="——").slice(0,2).join("；"),ctx:ctx.slice(0,240),book:book.title,t:Date.now()};
+    store.set("words",saved);updateCount();
+    b.classList.toggle("on",!!saved[k]);b.textContent=saved[k]?"已收藏":"收藏";
+  });
 }
 
 /* ---------- speech ---------- */
@@ -457,10 +632,20 @@ function sentences(t){
   if(sSeg) return [...sSeg.segment(t)].map(x=>x.segment.trim()).filter(Boolean);
   return (t.match(/[^.!?]+(?:[.!?]+["'”’)]*|$)/g)||[t]).map(s=>s.trim()).filter(Boolean);
 }
+function pieces(s){
+  if(wSeg) return [...wSeg.segment(s)].map(x=>({t:x.segment,w:!!(x.isWordLike&&/[A-Za-z]/.test(x.segment))}));
+  return s.split(/([A-Za-z\u00C0-\u024F]+(?:['’][A-Za-z]+)*)/).map((p,i)=>({t:p,w:i%2===1})).filter(x=>x.t);
+}
+function tokenize(s){
+  const ps=pieces(s);const out=[];
+  for(const x of ps){
+    if(x.w) out.push({t:x.t,brk:false});
+    else if(out.length && /[^\s\-'’]/.test(x.t)) out[out.length-1].brk=true;
+  }
+  return out;
+}
 function wordsHTML(s){
-  const span=x=>'<span class="w'+(saved[x.toLowerCase()]?" saved":"")+'">'+esc(x)+"</span>";
-  if(wSeg){let h="";for(const x of wSeg.segment(s)) h+=x.isWordLike&&/[A-Za-z]/.test(x.segment)?span(x.segment):esc(x.segment);return h}
-  return s.split(/([A-Za-zÀ-ɏ]+(?:['’][A-Za-z]+)*)/).map((p,i)=>i%2?span(p):esc(p)).join("");
+  return pieces(s).map(x=>x.w?'<span class="w'+(saved[x.t.toLowerCase()]?" saved":"")+'">'+esc(x.t)+"</span>":esc(x.t)).join("");
 }
 
 /* ---------- state ---------- */
@@ -483,6 +668,7 @@ async function loadBuffer(buf,name,id){
   $("#chsel").innerHTML=book.chapters.map((c,i)=>'<option value="'+i+'">'+esc(c.title)+"</option>").join("");
   $("#start").classList.add("hidden");$("#bar").classList.remove("hidden");$("#reader").classList.remove("hidden");
   bookId=id;
+  loadNotes();
   const old=(await allMeta()).find(m=>m.id===id);
   putMeta({...(old||{added:Date.now()}),id,name,title:book.title,chs:book.chapters.length,opened:Date.now()});
   const p=store.get(posKey())||{ch:0,r:0};
@@ -508,11 +694,197 @@ function showChapter(i,ratio){
   $("#text").innerHTML=out.join("");
   $("#prev").onclick=()=>showChapter(cur-1,0);
   $("#next").onclick=()=>showChapter(cur+1,0);
+  paintNotes();hideBar();
   requestAnimationFrame(()=>{const se=document.scrollingElement;se.scrollTop=ratio?ratio*se.scrollHeight:0;savePos()});
 }
 let posT=0;
 function savePos(){ if(!book) return; const se=document.scrollingElement; store.set(posKey(),{ch:cur,r:se.scrollHeight?se.scrollTop/se.scrollHeight:0}) }
 addEventListener("scroll",()=>{clearTimeout(posT);posT=setTimeout(savePos,400)},{passive:true});
+
+/* ---------- highlights & notes ---------- */
+let notes=[];
+const nKey=()=>"notes:"+bookId;
+function loadNotes(){notes=store.get(nKey())||[];updateNoteCount()}
+function saveNotes(){store.set(nKey(),notes);updateNoteCount()}
+function updateNoteCount(){$("#ncnt").textContent=notes.length?"("+notes.length+")":""}
+function noteText(n){return n.text}
+function wrapRange(sEl,start,end,cls,id){
+  const walker=document.createTreeWalker(sEl,NodeFilter.SHOW_TEXT);
+  let pos=0,node;const parts=[];
+  while((node=walker.nextNode())){
+    const L=node.data.length,a=Math.max(start,pos),b=Math.min(end,pos+L);
+    if(a<b) parts.push([node,a-pos,b-pos]);
+    pos+=L;if(pos>=end) break;
+  }
+  const marks=[];
+  for(const [nd,a,b] of parts){
+    let t=nd;if(a>0) t=t.splitText(a);
+    if(b-a<t.data.length) t.splitText(b-a);
+    const m=document.createElement("mark");m.className=cls;m.dataset.n=id;
+    t.parentNode.insertBefore(m,t);m.appendChild(t);marks.push(m);
+  }
+  return marks;
+}
+function paintNotes(){
+  const root=$("#text");
+  root.querySelectorAll("mark.hl").forEach(m=>m.replaceWith(...m.childNodes));
+  root.normalize();
+  for(const n of notes){
+    if(n.ch!==cur) continue;
+    let last=null;
+    for(let k=n.s0;k<=n.s1;k++){
+      const el=root.querySelector('.s[data-s="'+k+'"]');if(!el) continue;
+      const a=k===n.s0?n.o0:0,b=k===n.s1?n.o1:el.textContent.length;
+      const ms=wrapRange(el,a,b,"hl c-"+n.color+(n.note?" has-note":""),n.id);
+      if(ms.length) last=ms[ms.length-1];
+    }
+    if(last) last.classList.add("end");
+  }
+}
+function offIn(el,node,off){const r=document.createRange();r.setStart(el,0);r.setEnd(node,off);return r.toString().length}
+function selInfo(){
+  const se=window.getSelection();if(!se||se.isCollapsed||!se.rangeCount) return null;
+  const r=se.getRangeAt(0);
+  if(!$("#text").contains(r.commonAncestorContainer)) return null;
+  const ss=[...$("#text").querySelectorAll(".s")].filter(x=>r.intersectsNode(x));
+  if(!ss.length) return null;
+  const f=ss[0],l=ss[ss.length-1];
+  let s0=+f.dataset.s,s1=+l.dataset.s;
+  let o0=f.contains(r.startContainer)?offIn(f,r.startContainer,r.startOffset):0;
+  let o1=l.contains(r.endContainer)?offIn(l,r.endContainer,r.endOffset):l.textContent.length;
+  const ft=f.textContent,lt=l.textContent;
+  while(o0<ft.length&&/\s/.test(ft[o0])) o0++;
+  while(o1>0&&/\s/.test(lt[o1-1])) o1--;
+  if(s0===s1&&o1<=o0) return null;
+  const parts=[];
+  for(let k=s0;k<=s1;k++){const t=sents[k];parts.push(t.slice(k===s0?o0:0,k===s1?o1:t.length))}
+  const text=parts.join(" ").trim();
+  if(!text) return null;
+  return {s0,o0,s1,o1,text};
+}
+function addNote(info,color){
+  const n={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),ch:cur,chTitle:book.chapters[cur].title,
+    s0:info.s0,o0:info.o0,s1:info.s1,o1:info.o1,text:info.text,color:color||"y",note:"",t:Date.now()};
+  notes.push(n);saveNotes();paintNotes();
+  return n;
+}
+let editing=null;
+function openNote(n){
+  editing=n;
+  $("#nq").textContent=n.text;$("#nt").value=n.note||"";
+  $("#ncol").querySelectorAll(".dot").forEach(d=>d.classList.toggle("on",d.dataset.c===n.color));
+  $("#ndlg").showModal();
+  setTimeout(()=>$("#nt").focus(),50);
+}
+$("#ncol").querySelectorAll(".dot").forEach(d=>d.onclick=()=>{
+  if(!editing) return;editing.color=d.dataset.c;
+  $("#ncol").querySelectorAll(".dot").forEach(x=>x.classList.toggle("on",x===d));
+});
+$("#ndlg").addEventListener("close",()=>{
+  const n=editing;editing=null;if(!n) return;
+  const v=$("#ndlg").returnValue;
+  if(v==="save"){n.note=$("#nt").value.trim();n.t=Date.now()}
+  else if(v==="del"){notes=notes.filter(x=>x.id!==n.id)}
+  saveNotes();paintNotes();
+  if(!$("#notes").classList.contains("hidden")) renderNotes();
+  if(sel&&sel.noteId===n.id){ if(v==="del") sel.noteId=null; renderPanel(); }
+});
+function jumpTo(n){
+  const go=()=>{
+    const m=$('#text mark.hl[data-n="'+n.id+'"]');
+    if(m){m.scrollIntoView({block:"center",behavior:"smooth"});
+      document.querySelectorAll('#text mark.hl[data-n="'+n.id+'"]').forEach(x=>{x.classList.remove("flash");void x.offsetWidth;x.classList.add("flash")})}
+  };
+  if(window.innerWidth<960) closePanel(false);
+  if(n.ch!==cur){showChapter(n.ch,0);setTimeout(go,80)} else go();
+}
+function renderNotes(){
+  const box=$("#notes");
+  if(!notes.length){box.innerHTML='<p class="hint">还没有笔记。<br>拖动选中一段文字（手机上长按单词再拖动选择范围），点颜色就能划线，点“笔记”可以写下想法。<br>也可以点一个句子，在注解里点“划线这句”。</p>';return}
+  const sorted=notes.slice().sort((a,b)=>a.ch-b.ch||a.s0-b.s0||a.o0-b.o0);
+  let h='<div class="row"><button class="ib" id="nExp">导出笔记（Markdown）</button><button class="ib" id="nCopy">复制全部</button></div><ul class="nl">';
+  let lastCh=-1;
+  for(const n of sorted){
+    if(n.ch!==lastCh){h+='<h4>'+esc(book.chapters[n.ch]?book.chapters[n.ch].title:n.chTitle||"")+"</h4>";lastCh=n.ch}
+    h+='<li class="c-'+n.color+'" style="--hl-line:var(--l-'+n.color+')"><div class="nq" lang="en">'+esc(n.text)+"</div>"+
+      (n.note?'<div class="nn">'+esc(n.note)+"</div>":"")+
+      '<div class="act"><button data-j="'+n.id+'">跳到原文</button><button data-e="'+n.id+'">'+(n.note?"编辑笔记":"写笔记")+'</button><button class="del" data-d="'+n.id+'">删除</button></div></li>';
+  }
+  box.innerHTML=h+"</ul>";
+  const find=id=>notes.find(x=>x.id===id);
+  box.querySelectorAll("[data-j]").forEach(b=>b.onclick=()=>jumpTo(find(b.dataset.j)));
+  box.querySelectorAll("[data-e]").forEach(b=>b.onclick=()=>openNote(find(b.dataset.e)));
+  box.querySelectorAll("[data-d]").forEach(b=>b.onclick=()=>{
+    if(!confirm("删除这条划线和笔记？")) return;
+    notes=notes.filter(x=>x.id!==b.dataset.d);saveNotes();paintNotes();renderNotes();
+  });
+  const md=()=>{
+    let t="# 《"+book.title+"》读书笔记\n";let lc=-1;
+    for(const n of sorted){
+      if(n.ch!==lc){t+="\n## "+(book.chapters[n.ch]?book.chapters[n.ch].title:"")+"\n";lc=n.ch}
+      t+="\n> "+n.text.replace(/\n/g," ")+"\n"+(n.note?"\n"+n.note+"\n":"");
+    }
+    return t;
+  };
+  $("#nExp").onclick=()=>{
+    const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([md()],{type:"text/markdown"}));
+    a.download="《"+book.title.replace(/[\\/:*?"<>|]/g,"")+"》读书笔记.md";a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+  };
+  $("#nCopy").onclick=()=>copy(md());
+}
+
+/* ---------- selection toolbar ---------- */
+let selT=0,lastSel=null;
+const bar=$("#selbar");
+function hideBar(){bar.classList.add("hidden");lastSel=null}
+function placeBar(){
+  const info=selInfo();
+  if(!info){hideBar();return}
+  lastSel=info;
+  const r=window.getSelection().getRangeAt(0).getBoundingClientRect();
+  bar.classList.remove("hidden");
+  const bw=bar.offsetWidth,bh=bar.offsetHeight,vw=window.innerWidth,vh=window.innerHeight;
+  let x=Math.min(Math.max(8,r.left+r.width/2-bw/2),vw-bw-8);
+  let y=r.bottom+12;
+  if(y+bh>vh-8) y=Math.max(8,r.top-bh-12);
+  bar.style.left=x+"px";bar.style.top=y+"px";
+}
+document.addEventListener("selectionchange",()=>{clearTimeout(selT);selT=setTimeout(placeBar,250)});
+addEventListener("scroll",()=>{if(!bar.classList.contains("hidden")) placeBar()},{passive:true});
+bar.addEventListener("pointerdown",e=>e.preventDefault());
+bar.addEventListener("mousedown",e=>e.preventDefault());
+bar.addEventListener("click",e=>{
+  const b=e.target.closest("button");if(!b||!lastSel) return;
+  const info=lastSel;
+  if(b.dataset.c){addNote(info,b.dataset.c);window.getSelection().removeAllRanges();hideBar();toast("已划线");return}
+  const a=b.dataset.a;
+  if(a==="note"){const n=addNote(info,"y");window.getSelection().removeAllRanges();hideBar();openNote(n);return}
+  if(a==="copy"){copy(info.text);return}
+  if(a==="look"){window.getSelection().removeAllRanges();hideBar();lookSelection(info);return}
+});
+async function lookSelection(info){
+  clearMarks();
+  sel={id:info.s0,word:null,selText:info.text};
+  showTab("note");openPanel();
+  const toks=tokenize(info.text);
+  $("#panel").innerHTML='<div class="quote" lang="en">'+esc(info.text)+'</div><div class="row"><button class="ib" id="xSay">🔊 朗读</button><a class="ib" target="_blank" rel="noopener" href="'+gtUrl(info.text)+'">谷歌翻译</a><a class="ib" target="_blank" rel="noopener" href="'+bingUrl(info.text)+'">必应翻译</a></div><div id="pbox"><div class="wc"><span class="hint">正在查词组…</span></div></div>';
+  $("#xSay").onclick=()=>say(info.text);
+  const my=sel;
+  const found=(await phrasesIn(toks)).filter(m=>m.j-m.i>=2||toks.length===1);
+  if(sel!==my) return;
+  const box=$("#pbox");
+  let h=phraseCard(found,toks,found.length?"选中内容里的词组":"");
+  if(!found.length){
+    h='<div class="wc"><p class="miss">离线词组词典里没有找到这个说法。可以点下面的在线词典查，或看看每个词的意思：</p><ul class="defs">';
+    for(const t of toks.slice(0,8)){
+      const e=await lookup(t.t);
+      const d=e&&!e.failed?defLines(e.tr)[0]:null;
+      h+='<li><span class="pos" lang="en">'+esc(t.t)+'</span><span>'+(d?esc((d.pos?d.pos+" ":"")+d.txt):"（没有收录）")+"</span></li>";
+    }
+    h+="</ul>"+onlineLinks(info.text)+"</div>";
+  } else h+=onlineLinks(info.text);
+  box.innerHTML=h;wirePhrase(box,found,sents[info.s0]||info.text);
+}
 
 /* ---------- panel ---------- */
 function clearMarks(){document.querySelectorAll(".s.on,.w.on").forEach(e=>e.classList.remove("on"))}
@@ -521,14 +893,17 @@ function closePanel(reset){
   $("#aside").classList.remove("open");document.body.classList.remove("sheet");
   if(reset){sel=null;clearMarks();$("#panel").innerHTML=HINT}
 }
-function showTab(list){
-  $("#tNote").classList.toggle("on",!list);$("#tList").classList.toggle("on",list);
-  $("#panel").classList.toggle("hidden",list);$("#list").classList.toggle("hidden",!list);
-  if(list) renderList();
+function showTab(name){
+  if(name===true) name="list"; if(name===false) name="note";
+  $("#tNote").classList.toggle("on",name==="note");$("#tNotes").classList.toggle("on",name==="notes");$("#tList").classList.toggle("on",name==="list");
+  $("#panel").classList.toggle("hidden",name!=="note");$("#notes").classList.toggle("hidden",name!=="notes");$("#list").classList.toggle("hidden",name!=="list");
+  if(name==="list") renderList();
+  if(name==="notes") renderNotes();
 }
 $("#close").onclick=()=>closePanel(false);
-$("#tNote").onclick=()=>showTab(false);
-$("#tList").onclick=()=>showTab(true);
+$("#tNote").onclick=()=>showTab("note");
+$("#tNotes").onclick=()=>showTab("notes");
+$("#tList").onclick=()=>showTab("list");
 
 $("#text").addEventListener("click",e=>{
   if(window.getSelection&&String(window.getSelection()).length) return;
@@ -536,8 +911,10 @@ $("#text").addEventListener("click",e=>{
   if(!s) return;
   clearMarks();s.classList.add("on");
   if(w) w.classList.add("on");
-  sel={id:+s.dataset.s,word:w?w.textContent:null};
-  showTab(false);renderPanel();openPanel();
+  const mk=e.target.closest("mark.hl");
+  const widx=w?[...s.querySelectorAll(".w")].indexOf(w):-1;
+  sel={id:+s.dataset.s,word:w?w.textContent:null,widx,noteId:mk?mk.dataset.n:null};
+  showTab("note");renderPanel();openPanel();
 });
 
 function gtUrl(t){return "https://translate.google.com/?sl=en&tl=zh-CN&op=translate&text="+encodeURIComponent(t)}
@@ -545,8 +922,11 @@ function bingUrl(t){return "https://www.bing.com/translator?from=en&to=zh-Hans&t
 
 function renderPanel(){
   const my=sel;const s=sents[my.id];const long=s.length>220;
+  const nt=my.noteId?notes.find(x=>x.id===my.noteId):null;
   $("#panel").innerHTML=
-    (my.word?'<div id="wbox"><div class="wc"><span class="hint">正在查词典…</span></div></div>':"")+
+    (nt?'<div class="nc c-'+nt.color+'"><div class="nq" lang="en">'+esc(nt.text)+"</div>"+(nt.note?'<div class="nn">'+esc(nt.note)+"</div>":"")+
+      '<div class="row"><button class="ib" id="nEdit">'+(nt.note?"编辑笔记":"写笔记")+'</button><button class="ib" id="nDel">删除划线</button></div></div>':"")+
+    (my.word?'<div id="phbox"><p class="hint" style="font-size:12.5px;margin:0 0 8px">正在找本句的固定搭配…</p></div><div id="wbox"><div class="wc"><span class="hint">正在查词典…</span></div></div>':"")+
     '<div class="quote'+(long?" clip":"")+'" lang="en" id="q">'+esc(s)+"</div>"+
     (long?'<button class="more" id="more">展开整句</button>':"")+
     '<div class="row">'+
@@ -555,17 +935,35 @@ function renderPanel(){
       '<a class="ib" target="_blank" rel="noopener" href="'+gtUrl(s)+'">谷歌翻译</a>'+
       '<a class="ib" target="_blank" rel="noopener" href="'+bingUrl(s)+'">必应翻译</a>'+
       '<button class="ib" id="sCopy">复制这句</button>'+
+      '<button class="ib" id="sHl">划线这句</button>'+
+      '<button class="ib" id="sNote">给这句写笔记</button>'+
     "</div>"+
     '<div id="trbox"></div>';
   if(long) $("#more").onclick=()=>{$("#q").classList.remove("clip");$("#more").remove()};
   $("#sSay").onclick=()=>say(s,0.95);
   $("#sCopy").onclick=()=>copy(s);
+  const whole={s0:my.id,o0:0,s1:my.id,o1:s.length,text:s};
+  $("#sHl").onclick=()=>{const n=addNote(whole,"y");my.noteId=n.id;toast("已划线");renderPanel()};
+  $("#sNote").onclick=()=>{const n=addNote(whole,"y");my.noteId=n.id;openNote(n)};
+  if(nt){
+    $("#nEdit").onclick=()=>openNote(nt);
+    $("#nDel").onclick=()=>{notes=notes.filter(x=>x.id!==nt.id);saveNotes();paintNotes();my.noteId=null;renderPanel()};
+  }
   if(canTranslate()) $("#sTr").onclick=async()=>{
     const box=$("#trbox");box.innerHTML='<div class="tr"><span class="hint">正在翻译（第一次使用要先下载翻译模型，可能需要一分钟）…</span></div>';
     try{const t=await translate(s);if(sel===my)box.innerHTML='<div class="tr"><span class="lab">机器翻译，仅供参考</span>'+esc(t)+"</div>"}
     catch(e){if(sel===my)box.innerHTML='<div class="tr"><span class="hint">这台设备暂时用不了离线翻译，请点“谷歌翻译”或“必应翻译”。</span></div>'}
   };
-  if(my.word) showWord(my);
+  if(my.word){showWord(my);showPhrases(my)}
+}
+async function showPhrases(my){
+  const toks=tokenize(sents[my.id]);
+  const all=await phrasesIn(toks);
+  if(sel!==my) return;
+  const hit=all.filter(m=>my.widx>=m.i&&my.widx<m.j);
+  const box=$("#phbox");if(!box) return;
+  box.innerHTML=phraseCard(hit,toks,"这个词在本句的固定搭配");
+  wirePhrase(box,hit,sents[my.id]);
 }
 async function copy(t){
   try{await navigator.clipboard.writeText(t);toast("已复制")}
@@ -596,6 +994,7 @@ async function showWord(my){
       (e.col?"<div>柯林斯词频星级：<b>"+"★".repeat(e.col)+"</b>（星越多越常用，最高五星）</div>":"")+
       (tags.length?"<div>考试词表："+tags.join("、")+"</div>":"")+
     "</div>":"")+
+    onlineLinks(e.word)+
   "</div>";
   $("#wSay").onclick=()=>say(e.word);
   $("#wStar").onclick=()=>{
@@ -630,6 +1029,23 @@ $("#vSel").onchange=e=>{store.set("voice",e.target.value);pickVoice();say("Hello
 $("#vRate").oninput=e=>{rate=+e.target.value;store.set("rate",rate);$("#vRateL").textContent=rate.toFixed(2)+" 倍"};
 $("#vTry").onclick=()=>say("Good morning. Shall we read a few more pages together?");
 $("#vAuto").onclick=()=>{store.set("voice",null);pickVoice();openVoice();say("Hello, this is how I sound.")};
+
+/* ---------- offline download ---------- */
+const ALLFILES=[..."abcdefghijklmnopqrstuvwxyz"].flatMap(c=>["dict-"+c+".js","phr-"+c+".js"]);
+if("serviceWorker" in navigator && location.protocol==="https:"){
+  $("#offline").classList.remove("hidden");
+  if(store.get("offlineDone")) $("#dlMsg").textContent="全部词典已经下载到这台设备上。";
+  $("#dlAll").onclick=async()=>{
+    const b=$("#dlAll"),m=$("#dlMsg");b.disabled=true;let done=0,fail=0;
+    for(const f of ALLFILES){
+      try{const r=await fetch(f);if(!r.ok&&r.status!==404) fail++;}catch(e){fail++}
+      done++;m.textContent="正在下载… "+Math.round(done/ALLFILES.length*100)+"%";
+    }
+    b.disabled=false;
+    if(fail){m.textContent="有 "+fail+" 个文件没下载成功，请连好网络后再点一次。"}
+    else{m.textContent="完成！全部词典已经存到这台设备上，断网也能查。";store.set("offlineDone",true)}
+  };
+}
 
 /* ---------- controls ---------- */
 $("#chsel").onchange=e=>showChapter(+e.target.value,0);
@@ -678,7 +1094,7 @@ async function showShelf(){
   el.querySelectorAll(".del").forEach(b=>b.onclick=async()=>{
     const m=list.find(x=>x.id===b.dataset.id);
     if(!confirm("从书架删除《"+m.title+"》？\n阅读进度会一起删除，生词本里的词会保留。")) return;
-    await delBook(m.id);try{localStorage.removeItem("pos:"+hash(m.title))}catch(e){}
+    await delBook(m.id);try{localStorage.removeItem("pos:"+hash(m.title));localStorage.removeItem("notes:"+m.id)}catch(e){}
     showShelf();
   });
 }
