@@ -1,5 +1,5 @@
-const CACHE="anno-reader-v6";
-const CORE=["./","index.html","manifest.json","icon-192.png","icon-512.png","jszip.min.js","lemma.js"];
+const CACHE="anno-reader-v7";
+const CORE=["./","index.html","manifest.json","icon-192.png","icon-512.png","jszip.min.js","lemma.js","compromise.min.js"];
 self.addEventListener("install",e=>{e.waitUntil(caches.open(CACHE).then(c=>c.addAll(CORE)).then(()=>self.skipWaiting()))});
 self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
 self.addEventListener("fetch",e=>{

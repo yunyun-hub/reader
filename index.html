@@ -171,6 +171,46 @@ mark.hl.flash{animation:flash 1.4s ease}
 .dlgf textarea{width:100%;padding:10px 12px;border:1px solid var(--rule);border-radius:8px;background:var(--paper);color:var(--ink);font:inherit;font-size:15px;line-height:1.6;resize:vertical}
 .dlgf .quote{max-height:7.5em;overflow:auto;margin:0}
 .ib.danger{color:var(--err)}
+.gbtn{border-color:var(--accent)!important;color:var(--accent)}
+.gx{border:1px solid var(--rule);border-radius:10px;padding:12px 14px;margin:4px 0 14px;background:var(--paper);font-size:14px;line-height:1.7}
+.gx h5{font-size:13px;color:var(--accent);margin:12px 0 4px;font-weight:600}
+.gx h5:first-child{margin-top:0}
+.gx .cs{font-family:var(--text);font-size:16.5px;line-height:2.1}
+.gx .cs span{border-bottom:3px solid transparent;padding:0 1px}
+.p-n{border-color:#4C74D8!important}.p-v{border-color:#D9534F!important}.p-adj{border-color:#3E9A5A!important}.p-adv{border-color:#C9A227!important}
+.p-prep{border-color:#8E6CC4!important}.p-conj{border-color:#E07B39!important}.p-pron{border-color:#2AA3A3!important}.p-det,.p-num{border-color:#9AA3A0!important}.p-aux{border-color:#D9534F!important;border-bottom-style:dotted!important}
+.lg{display:flex;flex-wrap:wrap;gap:4px 10px;font-size:12px;color:var(--muted);margin-top:4px}
+.lg i{display:inline-block;width:14px;height:0;border-bottom:3px solid;vertical-align:middle;margin-right:3px}
+.sk{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0}
+.sk div{border:1px solid var(--rule);border-radius:6px;padding:3px 8px;background:var(--sheet)}
+.sk small{display:block;font-size:11px;color:var(--muted);line-height:1.3}
+.sk b{font-family:var(--text);font-weight:500;font-size:15px}
+.gx ul{margin:0;padding-left:1.1em}
+.gx li{margin-bottom:3px}
+.gx .en{font-family:var(--text);font-size:15px}
+.tpl{width:100%;font-family:var(--text);font-size:15.5px;padding:8px 10px;border:1px solid var(--accent);border-radius:8px;background:var(--sheet);color:var(--ink);resize:vertical;line-height:1.5}
+.gx .warn{font-size:12.5px;color:var(--muted);margin-top:8px}
+.gx textarea.paste{width:100%;min-height:110px;padding:8px 10px;border:1px solid var(--rule);border-radius:8px;background:var(--sheet);color:var(--ink);font:inherit;font-size:14px}
+.pl{list-style:none;margin:0;padding:0}
+.pl>li{border:1px solid var(--rule);border-radius:10px;padding:12px 14px;margin-bottom:12px;background:var(--paper)}
+.pl .pt{font-family:var(--text);font-size:17px;line-height:1.45;font-weight:600}
+.pl .ps{font-family:var(--text);font-size:14px;color:var(--muted);margin-top:4px}
+.pl .pm{font-size:12px;color:var(--muted);margin-top:2px}
+.pl details{margin-top:8px;font-size:14px}
+.pl summary{cursor:pointer;color:var(--accent);font-size:13px}
+.pl .ex{list-style:none;padding:0;margin:8px 0 0}
+.pl .ex li{display:flex;gap:6px;align-items:flex-start;padding:4px 0;border-top:1px dashed var(--rule);font-size:14px;line-height:1.6}
+.pl .ex li .tx{flex:1}
+.pl .ex li .tx .e{font-family:var(--text);font-size:15px}
+.pl .ex .me{font-size:11px;color:var(--ok);border:1px solid var(--ok);border-radius:4px;padding:0 4px;margin-right:4px}
+.pl .try{display:flex;gap:6px;margin-top:8px}
+.pl .try input{flex:1;min-width:0;padding:7px 9px;border:1px solid var(--rule);border-radius:8px;background:var(--sheet);color:var(--ink);font-family:var(--text);font-size:15px}
+.pl .fb{font-size:13px;margin-top:4px;line-height:1.6}
+.pl .fb.ok{color:var(--ok)}.pl .fb.no{color:var(--err)}
+.pl .act{display:flex;gap:14px;margin-top:8px}
+.pl .act button{background:none;border:0;padding:0;font-size:12.5px;color:var(--accent)}
+.pl .act button.del{color:var(--muted)}
+.cl{white-space:pre-wrap;font-size:14px;line-height:1.75;margin-top:6px}
 dialog{border:1px solid var(--rule);border-radius:14px;background:var(--sheet);color:var(--ink);padding:0;width:min(440px,calc(100vw - 32px))}
 dialog::backdrop{background:rgba(0,0,0,.35)}
 .dlgf{padding:22px;font-size:14.5px;line-height:1.7;display:flex;flex-direction:column;gap:8px}
@@ -224,11 +264,12 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
   <aside id="aside" aria-label="注解">
     <div class="pin">
       <div class="ph">
-        <div class="tabs"><button class="tab on" id="tNote">注解</button><button class="tab" id="tNotes">笔记 <span id="ncnt"></span></button><button class="tab" id="tList">生词本 <span id="cnt"></span></button></div>
+        <div class="tabs"><button class="tab on" id="tNote">注解</button><button class="tab" id="tNotes">笔记 <span id="ncnt"></span></button><button class="tab" id="tPat">句型本 <span id="pcnt"></span></button><button class="tab" id="tList">生词本 <span id="cnt"></span></button></div>
         <button class="ib close" id="close">收起</button>
       </div>
       <div id="panel"></div>
       <div id="notes" class="hidden"></div>
+      <div id="pats" class="hidden"></div>
       <div id="list" class="hidden"></div>
     </div>
   </aside>
@@ -273,7 +314,7 @@ const store={
 function hash(s){let h=5381;for(let i=0;i<s.length;i++)h=((h<<5)+h+s.charCodeAt(i))|0;return (h>>>0).toString(36)}
 let toastT=0;
 function toast(m){const t=$("#toast");t.textContent=m;t.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove("on"),1800)}
-const HINT='<p class="hint">点任意单词：查释义，并自动找出它在这句话里的固定搭配。<br>拖动选中一段文字（手机上长按后拖动）：可以划线、写笔记、查词组。<br>点句子里的标点或空白处：只选中整句。</p>';
+const HINT='<p class="hint">点任意单词：查释义，并自动找出它在这句话里的固定搭配。<br>拖动选中一段文字（手机上长按后拖动）：可以划线、写笔记、查词组。<br>点句子里的标点或空白处：选中整句，并自动做句子讲解（语法、结构、可复用句型）。</p>';
 
 /* ---------- offline service (only when hosted over https) ---------- */
 if("serviceWorker" in navigator && location.protocol==="https:"){
@@ -833,6 +874,349 @@ function renderNotes(){
   $("#nCopy").onclick=()=>copy(md());
 }
 
+/* ---------- grammar analysis (offline, compromise) ---------- */
+let nlpP=null;
+function loadNlp(){
+  if(window.nlp) return Promise.resolve(window.nlp);
+  if(nlpP) return nlpP;
+  return nlpP=new Promise(res=>{const sc=document.createElement("script");sc.src="compromise.min.js";
+    sc.onload=()=>res(window.nlp||null);sc.onerror=()=>{nlpP=null;res(null)};document.head.appendChild(sc)});
+}
+const POSN={n:"名词",v:"动词",adj:"形容词",adv:"副词",prep:"介词",conj:"连词",pron:"代词",det:"限定词",aux:"助动词/情态动词",num:"数词"};
+const SUB={when:["状语从句","时间"],whenever:["状语从句","时间"],while:["状语从句","时间/对比"],before:["状语从句","时间"],after:["状语从句","时间"],until:["状语从句","时间"],till:["状语从句","时间"],since:["状语从句","时间/原因"],as:["状语从句","时间/原因/方式"],
+  because:["状语从句","原因"],if:["状语从句","条件"],unless:["状语从句","条件（除非）"],although:["状语从句","让步（虽然）"],though:["状语从句","让步（虽然）"],whereas:["状语从句","对比"],
+  "so that":["状语从句","目的"],where:["状语从句或定语从句","地点"],once:["状语从句","时间（一旦）"]};
+const REL={who:"定语从句（修饰人）",whom:"定语从句（修饰人，作宾语）",whose:"定语从句（……的）",which:"定语从句（修饰物）"};
+const COORD={and:"并列（和、而且）",but:"转折（但是）",or:"选择（或者）",so:"结果（所以）",yet:"转折（然而）",nor:"否定并列（也不）"};
+const FORM=[["passive","被动语态"],["future-perfect-progressive","将来完成进行时"],["future-perfect","将来完成时"],["past-perfect-progressive","过去完成进行时"],["present-perfect-progressive","现在完成进行时"],
+  ["past-perfect","过去完成时"],["present-perfect","现在完成时"],["future-progressive","将来进行时"],["past-progressive","过去进行时"],["present-progressive","现在进行时"],
+  ["future","一般将来时"],["simple-past","一般过去时"],["simple-present","一般现在时"],["imperative","祈使语气（命令、建议）"],["modal","情态动词 + 动词原形"],["infinitive","动词不定式"],["gerund","动名词"]];
+const KEEPW=new Set("be is am are was were been being have has had do does did get gets got make makes made let lets keep keeps not never no more less than as so too very also even just only rather instead there here what how why who which that whose whom when where while if because although though unless until since before after than".split(" "));
+const PREPW=new Set("of in on at by for with without out up down off over under about into onto from to through across along around behind beyond during against among between toward towards upon within".split(" "));
+function posOf(t){
+  const g=t.tags||[],w=(t.normal||t.text||"").toLowerCase();
+  if(PREPW.has(w)&&!g.includes("Verb")) return "prep";
+  if(REL[w]||w==="that"&&false) return "pron";
+  if(SUB[w]||COORD[w]) return "conj";
+  if(g.includes("Determiner")) return "det";
+  if(g.includes("Pronoun")) return "pron";
+  if(g.includes("Auxiliary")||g.includes("Modal")||g.includes("Copula")) return "aux";
+  if(g.includes("Preposition")||g.includes("Particle")) return "prep";
+  if(g.includes("Conjunction")) return "conj";
+  if(g.includes("Value")) return "num";
+  if(g.includes("Verb")) return "v";
+  if(g.includes("Adverb")||g.includes("Negative")) return "adv";
+  if(g.includes("Adjective")) return "adj";
+  if(g.includes("Noun")) return "n";
+  return "";
+}
+function formZh(f){for(const [k,v] of FORM){if(f&&f.indexOf(k)>=0) return v}return f||"一般现在时"}
+async function analyze(s){
+  const nlp=await loadNlp();if(!nlp) return null;
+  const doc=nlp(s);
+  const J=doc.json()[0];if(!J) return null;
+  const terms=J.terms.map(t=>({text:t.text,pre:t.pre||"",post:t.post||"",tags:t.tags||[],w:(t.normal||t.text).toLowerCase(),pos:posOf(t)}));
+  const chunks=doc.chunks().json().map(c=>({text:c.text.replace(/[.,;:!?]+$/,""),n:c.terms.length,tags:c.terms.map(x=>x.tags||[])}));
+  // chunk kind
+  let k=0;
+  for(const c of chunks){c.i=k;k+=c.n;const ts=terms.slice(c.i,c.i+c.n);
+    c.kind=ts.some(t=>t.pos==="v")?"V":ts.some(t=>t.pos==="n"||t.pos==="pron"||t.pos==="num")?"N":ts.some(t=>t.pos==="adj")?"A":ts.length===1&&(ts[0].pos==="conj"||REL[ts[0].w]||SUB[ts[0].w])?"C":ts.length===1&&ts[0].pos==="prep"?"P":"O"}
+  // embedded clauses
+  const emb=[],used=new Set();
+  terms.forEach((t,i)=>{
+    const w=t.w,prev=terms[i-1];
+    let kind=null,sub="";
+    if(REL[w]) kind=REL[w];
+    else if(w==="that"&&prev&&(prev.pos==="n"||prev.pos==="pron")) kind="定语从句（that 引导）";
+    else if(w==="that"&&prev&&prev.pos==="v") kind="宾语从句（that 引导）";
+    else if(SUB[w]&&!(w==="as"&&terms[i+2]&&terms[i+2].w==="as")) {kind=SUB[w][0];sub=SUB[w][1]}
+    if(!kind) return;
+    // extent: until comma, or until the 2nd verb chunk
+    let j=i+1,seenV=false;
+    for(;j<terms.length;j++){
+      if(/[,;:]/.test(terms[j-1].post)) break;
+      if(terms[j].pos==="v"||terms[j].pos==="aux"){ if(seenV&&!(terms[j-1].pos==="v"||terms[j-1].pos==="aux"||terms[j-1].pos==="adv")&&kind.startsWith("定语")) break; seenV=true }
+    }
+    if(!seenV) return;
+    for(let x=i;x<j;x++) used.add(x);
+    emb.push({i,j,kind,sub,word:t.text,text:terms.slice(i,j).map(x=>x.text).join(" ")});
+  });
+  // coordination between clauses
+  const coords=[];
+  terms.forEach((t,i)=>{if(COORD[t.w]&&i>0){
+    const after=terms.slice(i+1);const before=terms.slice(0,i);
+    const vAfter=after.some(x=>x.pos==="v"),vBefore=before.some(x=>x.pos==="v");
+    if(vAfter&&vBefore&&(/[,;]/.test(terms[i-1].post)||t.w==="but"||t.w==="so"||t.w==="yet")) coords.push({i,word:t.text,mean:COORD[t.w]});
+  }});
+  // skeleton of main clause(s)
+  const mainIdx=terms.map((t,i)=>i).filter(i=>!used.has(i));
+  const clauses=[];let curC=[];
+  for(const i of mainIdx){ if(coords.some(c=>c.i===i)){ if(curC.length) clauses.push(curC); curC=[]; continue } curC.push(i) }
+  if(curC.length) clauses.push(curC);
+  const skel=clauses.map(ix=>{
+    const ts=ix.map(i=>terms[i]);
+    const vi=ts.findIndex(t=>t.pos==="v"||t.pos==="aux");
+    if(vi<0) return {frag:ts.map(t=>t.text).join(" ")};
+    let ve=vi;while(ve+1<ts.length&&(ts[ve+1].pos==="v"||ts[ve+1].pos==="aux"||ts[ve+1].pos==="adv"&&ts[ve+2]&&ts[ve+2].pos==="v"||ts[ve+1].tags.includes("Particle"))) ve++;
+    const subjT=ts.slice(0,vi).filter(t=>t.pos!=="conj"&&t.pos!=="adv"&&t.pos!=="prep");
+    let si=-1;for(let q=vi-1;q>=0;q--){if(ts[q].pos==="n"||ts[q].pos==="pron"||ts[q].pos==="num"){si=q;break}}
+    let s0=si;while(s0>0&&(ts[s0-1].pos==="det"||ts[s0-1].pos==="adj"||ts[s0-1].pos==="n"||ts[s0-1].pos==="num"||ts[s0-1].pos==="pron"&&ts[s0-1].tags.includes("Possessive"))) s0--;
+    const subj=si>=0?ts.slice(s0,si+1).map(t=>t.text).join(" "):"";
+    const verb=ts.slice(vi,ve+1).map(t=>t.text).join(" ");
+    let oi=ve+1;while(oi<ts.length&&(ts[oi].pos==="adv")) oi++;
+    let oe=oi;
+    if(oi<ts.length&&ts[oi].pos!=="prep"&&ts[oi].pos!=="conj"){while(oe<ts.length&&(ts[oe].pos==="det"||ts[oe].pos==="adj"||ts[oe].pos==="n"||ts[oe].pos==="num"||ts[oe].pos==="pron"||ts[oe].pos==="adv"&&oe>oi||ts[oe].pos==="conj"&&ts[oe].w==="and"&&ts[oe+1]&&ts[oe+1].pos===ts[oe-1].pos)) oe++}
+    const obj=ts.slice(oi,oe).map(t=>t.text).join(" ");
+    const vt=ts[vi];
+    const cop=["be","is","am","are","was","were","been","being","seem","seems","look","looks","become","became","feel","feels","get","got"].includes(ts[ve].w)&&ts.slice(oi,oe).some(t=>t.pos==="adj");
+    const imp=!subj&&(vi===0||ts.slice(0,vi).every(t=>t.pos==="adv"||t.pos==="conj"))&&(vt.tags.includes("Infinitive")||vt.tags.includes("Imperative"));
+    return {subj,verb,obj,cop,imp};
+  });
+  // verbs / tense
+  const verbs=doc.verbs().json().map(v=>{const g=(v.verb&&v.verb.grammar)||{};let f=g.form||"";
+    const aux=(v.verb&&v.verb.auxiliary||"").toLowerCase();
+    if(/\b(be|is|am|are|was|were|been|being|get|got)\b/.test(aux)&&/(ed|en|wn|ne)$/i.test(v.verb.root||"")&&!/progressive/.test(f)) f="passive "+f;
+    return {text:v.text.replace(/[.,;:!?]+$/,""),form:f,zh:formZh(f)+(v.verb&&v.verb.negative?"（否定）":""),inf:v.verb&&v.verb.infinitive}});
+  const end=s.trim().slice(-1);
+  const type=end==="?"?"疑问句":end==="!"?"感叹句":skel.length&&skel[0].imp?"祈使句（省略主语 you，表示命令、建议或提醒）":"陈述句";
+  const struct=emb.length&&coords.length?"并列复合句（既有并列分句，又有从句）":coords.length?"并列句（两个以上分句用连词并列）":emb.length?"复合句（主句 + 从句）":"简单句";
+  return {s,terms,emb,coords,skel,verbs,type,struct};
+}
+async function buildTemplate(A){
+  const toks=tokenize(A.s);
+  let phraseWords=new Set();
+  try{for(const m of await phrasesIn(toks)){
+    const kw=m.key.split(" ");
+    const litw=kw.filter(x=>!PH_OBJ.has(x)&&!PH_POSS.has(x)&&x!=="oneself");
+    const fn=kw.filter(x=>STOP.has(x)||PREPW.has(x)).length;
+    const hasPh=litw.length<kw.length;
+    const idiom=(hasPh&&litw.length>=2)||kw.length>=3&&fn>=2;
+    if(!idiom) continue;
+    const L=new Set(litw);
+    for(const x of toks.slice(m.i,m.j)){const f=await tokForms(x.t);if([...f].some(y=>L.has(y))) phraseWords.add(x.t.toLowerCase())}
+  }}catch(e){}
+  const out=[];
+  const HAVE=new Set(["have","has","had","having","'ve","'d"]),BE=new Set(["be","is","am","are","was","were","been","being","get","got","gets"]);
+  const prevAux=i=>{for(let q=i-1;q>=0;q--){const t=A.terms[q];if(t.pos==="adv")continue;return t.pos==="aux"||HAVE.has(t.w)||BE.has(t.w)?t.w:null}return null};
+  let curI=0;
+  const slot=t=>{
+    if(t.pos==="num") return "[数词]";
+    if(t.pos==="n") return "[名词]";
+    if(t.pos==="adj") return "[形容词]";
+    if(t.pos==="adv") return "[副词]";
+    if(t.pos==="v"){const g=t.tags;const pa=prevAux(curI);
+      if(g.includes("Gerund")) return "[动词-ing]";
+      if(pa&&HAVE.has(pa)) return "[过去分词]";
+      if(pa&&BE.has(pa)&&/(ed|en|wn|ne|ght|t)$/.test(t.w)) return "[过去分词]";
+      if(g.includes("Participle")) return "[过去分词]";
+      if(g.includes("PastTense")) return "[动词过去式]";
+      if(g.includes("Infinitive")||g.includes("Imperative")) return "[动词原形]";
+      return "[动词]";}
+    return null;
+  };
+  A.terms.forEach((t,i)=>{
+    curI=i;
+    let lit=KEEPW.has(t.w)||phraseWords.has(t.w)||["prep","conj","det","pron","aux"].includes(t.pos)||!t.pos;
+    if(t.pos==="pron"&&!t.tags.includes("Possessive")&&!REL[t.w]&&i>0&&false) lit=false;
+    const v=lit?t.text:slot(t)||t.text;
+    out.push({v,slot:!lit,pre:t.pre,post:t.post});
+  });
+  // merge noun phrases: (det|adj|possessive)* + [名词] → [名词短语]; collapse repeats
+  const m=[];
+  for(const x of out){
+    const L=m[m.length-1];
+    if(L&&x.slot&&L.slot&&!/[,;:]/.test(L.post)){
+      const a=L.v,b=x.v;
+      if(a===b){L.post=x.post;continue}
+      if((a==="[形容词]"||a==="[名词]"||a==="[名词短语]"||a==="[数词]")&&(b==="[名词]"||b==="[名词短语]")){L.v="[名词短语]";L.post=x.post;continue}
+      if(a==="[副词]"&&b==="[形容词]"){L.v="[形容词]";L.post=x.post;continue}
+    }
+    m.push({...x});
+  }
+  for(let i=0;i<m.length-1;i++){
+    if(!m[i].slot&&/^(the|a|an|my|your|his|her|its|our|their|this|that|these|those|some|any)$/i.test(m[i].v)&&m[i+1].v==="[名词短语]"&&!/[,;:]/.test(m[i].post)){m[i+1].pre=m[i].pre;m.splice(i,1);i--}
+  }
+  return m.map((x,i)=>(i?x.pre:"")+x.v+x.post).join("").trim();
+}
+function grammarHTML(A,tpl){
+  let h='<div class="gx">';
+  h+='<h5>词性标注</h5><div class="cs" lang="en">'+A.terms.map(t=>esc(t.pre)+'<span class="p-'+(t.pos||"x")+'" title="'+(POSN[t.pos]||"")+'">'+esc(t.text)+"</span>"+esc(t.post)).join("")+"</div>";
+  h+='<div class="lg">'+Object.entries(POSN).filter(([k])=>A.terms.some(t=>t.pos===k)).map(([k,v])=>'<span><i class="p-'+k+'"></i>'+v+"</span>").join("")+"</div>";
+  h+="<h5>句子类型</h5><div>"+esc(A.type)+"；"+esc(A.struct)+"</div>";
+  h+="<h5>句子主干</h5>";
+  A.skel.forEach((k,i)=>{
+    if(A.skel.length>1) h+='<div style="font-size:12.5px;color:var(--muted)">分句 '+(i+1)+"</div>";
+    if(k.frag){h+='<div class="sk"><div><small>短语 / 省略成分的片段</small><b lang="en">'+esc(k.frag)+"</b></div></div>";return}
+    h+='<div class="sk">'+
+      '<div><small>主语</small><b lang="en">'+(k.subj?esc(k.subj):(k.imp?"（省略 you）":"（省略）"))+"</b></div>"+
+      '<div><small>谓语</small><b lang="en">'+esc(k.verb)+"</b></div>"+
+      (k.obj?'<div><small>'+(k.cop?"表语（说明主语的状态）":"宾语 / 补足成分")+'</small><b lang="en">'+esc(k.obj)+"</b></div>":"")+"</div>";
+  });
+  if(A.emb.length||A.coords.length){
+    h+="<h5>从句与连接词</h5><ul>";
+    A.coords.forEach(c=>h+='<li><b lang="en">'+esc(c.word)+"</b>：并列连词，表示"+esc(c.mean)+"，连接前后两个分句</li>");
+    A.emb.forEach(e=>h+='<li><b lang="en">'+esc(e.word)+"</b> 引导"+esc(e.kind)+(e.sub?"，表示"+esc(e.sub):"")+'：<span class="en" lang="en">'+esc(e.text)+"</span></li>");
+    h+="</ul>";
+  }
+  if(A.verbs.length){
+    h+="<h5>时态与语态</h5><ul>"+A.verbs.map(v=>'<li><span class="en" lang="en">'+esc(v.text)+"</span>："+esc(v.zh)+(v.inf&&v.inf!==v.text.toLowerCase()?'（原形 <span lang="en">'+esc(v.inf)+"</span>）":"")+"</li>").join("")+"</ul>";
+  }
+  h+='<h5>可复用句型（可以直接修改）</h5><textarea class="tpl" id="tplIn" rows="2" lang="en">'+esc(tpl)+"</textarea>";
+  h+='<div class="from">[名词] [动词原形] 这些方括号是可替换的位置，其余是句型的骨架。</div>';
+  h+='<div class="row" style="margin-top:8px"><button class="ib" id="tplSave">保存到句型本</button><button class="ib gbtn" id="askC">🤖 问 Claude 深度讲解和造句</button></div>';
+  h+='<div id="cbox"></div>';
+  h+='<div class="warn">以上是离线程序自动分析，句子越长越复杂越可能不准，仅供参考。需要准确讲解请点“问 Claude”。</div>';
+  return h+"</div>";
+}
+async function showGrammar(my){
+  const box=$("#gbox");if(!box) return;
+  box.innerHTML='<div class="gx"><span class="hint">正在分析句子结构…</span></div>';
+  const s=sents[my.id];
+  const A=await analyze(s);
+  if(sel!==my) return;
+  if(!A){box.innerHTML='<div class="gx"><p class="miss">语法分析程序没有加载成功，请确认 compromise.min.js 文件和网页放在一起。</p></div>';return}
+  const tpl=await buildTemplate(A);
+  if(sel!==my) return;
+  box.innerHTML=grammarHTML(A,tpl);
+  const meta=()=>({type:A.type,struct:A.struct,skel:A.skel.map(k=>k.frag?k.frag:[k.subj||"（省略）",k.verb,k.obj].filter(Boolean).join(" | ")).join(" ； ")});
+  $("#tplSave").onclick=()=>{const p=savePattern({template:$("#tplIn").value.trim(),source:s,...meta()});toast(p.isNew?"已保存到句型本":"句型本里已有这个句型，已更新")};
+  $("#askC").onclick=()=>askClaude(s,my.id,$("#tplIn").value.trim(),meta);
+}
+
+/* ---------- ask Claude (copy prompt, paste answer back) ---------- */
+function claudePrompt(s,prev,tpl){
+  return "请帮我讲解下面这句英文。我是中文母语者，英语中上水平，正在读英文书《"+book.title+"》，想把好的句型积累成口语素材。\n\n"+
+  (prev?"上文："+prev+"\n":"")+"句子："+s+"\n"+(tpl?"阅读器自动提取的句型（可能不准）："+tpl+"\n":"")+
+  "\n请严格按下面的格式回答，所有语法术语和缩写都写中文全称：\n"+
+  "【中文翻译】\n通顺的译文\n"+
+  "【语法讲解】\n时态、语态、特殊语法现象，以及这句话为什么这样写\n"+
+  "【句子结构】\n先写主干（主语 + 谓语 + 宾语或表语），再逐块拆解修饰成分、从句和连接词\n"+
+  "【可复用句型】\n第一行只写一个可以套用的英文句型模板，用 [名词]、[动词原形]、[形容词] 这类方括号占位；第二行用中文说明这个句型表达什么语气或功能\n"+
+  "【口语例句】\n用这个句型造 5 个日常生活或工作场景的口语句子，每行一句，格式：英文 —— 中文\n"+
+  "【使用提示】\n什么场合适合说，语气正式还是随意，有什么容易用错的地方";
+}
+function parseClaude(t){
+  const sec={};let cur="";
+  for(const line of t.split(/\r?\n/)){
+    const m=line.match(/^\s*[#*\s]*【([^】]+)】\s*(.*)$/);
+    if(m){cur=m[1].trim();sec[cur]=m[2]?m[2]+"\n":"";continue}
+    if(cur) sec[cur]+=line+"\n";
+  }
+  const get=k=>{const key=Object.keys(sec).find(x=>x.includes(k));return key?sec[key].trim():""};
+  const clean=x=>x.replace(/\*\*/g,"").replace(/`/g,"").replace(/^[-*•\d.、)\s]+/,"").trim();
+  const tplSec=get("句型");
+  const tplLine=tplSec.split("\n").map(clean).find(x=>/[A-Za-z]/.test(x))||"";
+  const ex=get("例句").split("\n").map(clean).filter(x=>/[A-Za-z]/.test(x)).map(x=>{const p=x.split(/\s*(?:——|—|--|\|)\s*/);return {en:p[0].trim(),zh:(p.slice(1).join(" ")||"").trim(),by:"claude"}});
+  return {tpl:tplLine,examples:ex,raw:t.trim(),ok:Object.keys(sec).length>0};
+}
+function askClaude(s,id,tpl,meta){
+  const prompt=claudePrompt(s,sents[id-1]||"",tpl);
+  copy(prompt);
+  window.open("https://claude.ai/new","_blank","noopener");
+  const box=$("#cbox");
+  box.innerHTML='<h5>Claude 的回答</h5><div class="from">提问已经复制好了：在新打开的 Claude 页面里粘贴（Ctrl + V 或长按粘贴）并发送。Claude 回答后，复制它的全部回答，粘贴到下面保存。</div>'+
+    '<textarea class="paste" id="cPaste" placeholder="把 Claude 的回答粘贴到这里"></textarea>'+
+    '<div class="row" style="margin-top:6px"><button class="ib" id="cSave">保存到句型本</button><button class="ib" id="cCopy">再复制一次提问</button></div>';
+  $("#cCopy").onclick=()=>copy(prompt);
+  $("#cSave").onclick=()=>{
+    const t=$("#cPaste").value.trim();if(!t){toast("还没有粘贴内容");return}
+    const r=parseClaude(t);
+    const p=savePattern({template:r.tpl||tpl,source:s,claude:r.raw,examples:r.examples,...meta()});
+    toast("已保存到句型本"+(r.examples.length?"，含 "+r.examples.length+" 个例句":""));
+    box.innerHTML='<div class="from" style="color:var(--ok)">已保存。可以在“句型本”里查看、朗读例句和自己造句。</div>';
+  };
+}
+
+/* ---------- pattern book ---------- */
+let pats=store.get("patterns")||[];
+function savePats(){store.set("patterns",pats);updatePatCount()}
+function updatePatCount(){const e=$("#pcnt");if(e) e.textContent=pats.length?"("+pats.length+")":""}
+function savePattern(o){
+  let p=pats.find(x=>x.source===o.source);
+  const isNew=!p;
+  if(!p){p={id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),source:o.source,book:book?book.title:"",chTitle:book?book.chapters[cur].title:"",t:Date.now(),examples:[]};pats.unshift(p)}
+  if(o.template) p.template=o.template;
+  ["type","struct","skel"].forEach(k=>{if(o[k]) p[k]=o[k]});
+  if(o.claude) p.claude=o.claude;
+  if(o.examples&&o.examples.length){p.examples=p.examples.filter(x=>x.by!=="claude").concat(o.examples)}
+  p.t=Date.now();savePats();
+  return {...p,isNew};
+}
+async function checkAgainst(tpl,mine){
+  const lits=[];
+  tpl.replace(/\[[^\]]*\]/g," \u0000 ").split(/\s+/).forEach(x=>{const w=x.replace(/[^A-Za-z'’-]/g,"").toLowerCase();if(x==="\u0000") lits.push(null); else if(w) lits.push(w)});
+  const toks=tokenize(mine).map(x=>x.t);
+  const forms=await Promise.all(toks.map(t=>tokForms(t)));
+  let pos=0;const missing=[];let slotNeed=0;
+  for(const l of lits){
+    if(l===null){slotNeed++;continue}
+    let found=-1;for(let i=pos;i<toks.length;i++){if(forms[i].has(l)||toks[i].toLowerCase()===l){found=i;break}}
+    if(found<0){missing.push(l);continue}
+    if(found-pos<Math.min(slotNeed,1)) {}
+    pos=found+1;slotNeed=0;
+  }
+  return {missing,litCount:lits.filter(Boolean).length,words:toks.length};
+}
+function renderPats(){
+  const box=$("#pats");
+  if(!pats.length){box.innerHTML='<p class="hint">句型本还是空的。<br>点一个句子 → “📐 句子讲解” → “保存到句型本”。<br>想要讲解和例句，可以点“问 Claude 深度讲解和造句”，再把回答粘贴回来保存。</p>';return}
+  let h='<div class="row"><button class="ib" id="pExp">导出句型本（Markdown）</button><button class="ib" id="pCsv">导出表格（CSV）</button></div><ul class="pl">';
+  for(const p of pats){
+    h+='<li data-id="'+p.id+'"><div class="pt" lang="en">'+esc(p.template||"（还没有句型）")+"</div>"+
+      '<div class="ps" lang="en">原句：'+esc(p.source)+"</div>"+
+      '<div class="pm">'+esc([p.book?"《"+p.book+"》":"",p.type||"",p.struct||""].filter(Boolean).join(" · "))+"</div>"+
+      (p.skel?'<div class="pm">主干：<span lang="en">'+esc(p.skel)+"</span></div>":"")+
+      (p.claude?'<details><summary>Claude 的讲解</summary><div class="cl">'+esc(p.claude)+"</div></details>":"")+
+      (p.examples.length?'<ul class="ex">'+p.examples.map((x,i)=>'<li><div class="tx">'+(x.by==="me"?'<span class="me">我造的</span>':"")+'<span class="e" lang="en">'+esc(x.en)+"</span>"+(x.zh?"<br>"+esc(x.zh):"")+'</div><button class="spk sm" data-say="'+esc(x.en)+'" aria-label="朗读">🔊</button>'+(x.by==="me"?'<button class="spk sm" data-rm="'+i+'" aria-label="删除">✕</button>':"")+"</li>").join("")+"</ul>":"")+
+      '<div class="try"><input placeholder="用这个句型造一个你自己的句子" lang="en"><button class="ib" data-chk>检查并保存</button></div><div class="fb"></div>'+
+      '<div class="act"><button data-edit>修改句型</button><button data-ask>问 Claude 造句</button><button class="del" data-del>删除</button></div></li>';
+  }
+  box.innerHTML=h+"</ul>";
+  box.querySelectorAll("[data-say]").forEach(b=>b.onclick=()=>say(b.dataset.say));
+  box.querySelectorAll(".pl>li").forEach(li=>{
+    const p=pats.find(x=>x.id===li.dataset.id);
+    li.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{p.examples.splice(+b.dataset.rm,1);savePats();renderPats()});
+    li.querySelector("[data-del]").onclick=()=>{if(!confirm("从句型本删除这个句型？")) return;pats=pats.filter(x=>x!==p);savePats();renderPats()};
+    li.querySelector("[data-edit]").onclick=()=>{const v=prompt("修改句型（方括号表示可替换的位置）：",p.template||"");if(v!==null){p.template=v.trim();savePats();renderPats()}};
+    li.querySelector("[data-ask]").onclick=()=>{
+      const q="请用下面这个英文句型，造 5 个日常生活或工作场景的口语句子，每行一句，格式：英文 —— 中文。\n句型："+(p.template||"")+"\n原句："+p.source+"\n最后用一两句话说明这个句型的语气和使用场合。所有语法术语写中文全称。";
+      copy(q);window.open("https://claude.ai/new","_blank","noopener");toast("提问已复制，到 Claude 里粘贴发送");
+    };
+    const inp=li.querySelector(".try input"),fb=li.querySelector(".fb");
+    li.querySelector("[data-chk]").onclick=async()=>{
+      const v=inp.value.trim();if(!v){fb.className="fb no";fb.textContent="先写一个句子。";return}
+      const r=await checkAgainst(p.template||"",v);
+      if(!r.missing.length){
+        p.examples.push({en:v,zh:"",by:"me"});savePats();
+        fb.className="fb ok";fb.textContent="✓ 句型骨架都用上了，已保存。";
+        setTimeout(renderPats,900);
+      } else {
+        fb.className="fb no";fb.innerHTML="句型里的这些骨架词还没用上："+r.missing.map(x=>'<b lang="en">'+esc(x)+"</b>").join("、")+'。<button class="ib" style="margin-left:6px;font-size:12px">仍然保存</button>';
+        fb.querySelector("button").onclick=()=>{p.examples.push({en:v,zh:"",by:"me"});savePats();renderPats()};
+      }
+    };
+  });
+  const md=()=>{
+    let t="# 口语句型本\n";
+    for(const p of pats){
+      t+="\n## "+(p.template||"")+"\n\n- 原句："+p.source+(p.book?"（《"+p.book+"》）":"")+"\n"+(p.struct?"- 结构："+(p.type||"")+"；"+p.struct+"\n":"");
+      if(p.examples.length) t+="\n"+p.examples.map(x=>"- "+x.en+(x.zh?" —— "+x.zh:"")+(x.by==="me"?"（我造的）":"")).join("\n")+"\n";
+      if(p.claude) t+="\n<details><summary>Claude 的讲解</summary>\n\n"+p.claude+"\n\n</details>\n";
+    }
+    return t;
+  };
+  const dl=(txt,name,type)=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type}));a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
+  $("#pExp").onclick=()=>dl(md(),"口语句型本.md","text/markdown");
+  $("#pCsv").onclick=()=>{
+    const q=v=>'"'+String(v||"").replace(/"/g,'""')+'"';
+    const rows=[["句型","原句","书名","句子类型","例句（英文）","例句（中文）","来源"]];
+    for(const p of pats){ if(!p.examples.length) rows.push([p.template,p.source,p.book,p.struct,"","",""]);
+      p.examples.forEach(x=>rows.push([p.template,p.source,p.book,p.struct,x.en,x.zh,x.by==="me"?"我造的":"Claude"]))}
+    dl("﻿"+rows.map(r=>r.map(q).join(",")).join("\n"),"口语句型本.csv","text/csv");
+  };
+}
+updatePatCount();
+
 /* ---------- selection toolbar ---------- */
 let selT=0,lastSel=null;
 const bar=$("#selbar");
@@ -895,15 +1279,18 @@ function closePanel(reset){
 }
 function showTab(name){
   if(name===true) name="list"; if(name===false) name="note";
-  $("#tNote").classList.toggle("on",name==="note");$("#tNotes").classList.toggle("on",name==="notes");$("#tList").classList.toggle("on",name==="list");
-  $("#panel").classList.toggle("hidden",name!=="note");$("#notes").classList.toggle("hidden",name!=="notes");$("#list").classList.toggle("hidden",name!=="list");
+  [["tNote","panel","note"],["tNotes","notes","notes"],["tPat","pats","pats"],["tList","list","list"]].forEach(([t,b,n])=>{
+    $("#"+t).classList.toggle("on",name===n);$("#"+b).classList.toggle("hidden",name!==n);
+  });
   if(name==="list") renderList();
   if(name==="notes") renderNotes();
+  if(name==="pats") renderPats();
 }
 $("#close").onclick=()=>closePanel(false);
 $("#tNote").onclick=()=>showTab("note");
 $("#tNotes").onclick=()=>showTab("notes");
 $("#tList").onclick=()=>showTab("list");
+$("#tPat").onclick=()=>showTab("pats");
 
 $("#text").addEventListener("click",e=>{
   if(window.getSelection&&String(window.getSelection()).length) return;
@@ -937,8 +1324,9 @@ function renderPanel(){
       '<button class="ib" id="sCopy">复制这句</button>'+
       '<button class="ib" id="sHl">划线这句</button>'+
       '<button class="ib" id="sNote">给这句写笔记</button>'+
+      '<button class="ib gbtn" id="sGram">📐 句子讲解</button>'+
     "</div>"+
-    '<div id="trbox"></div>';
+    '<div id="trbox"></div><div id="gbox"></div>';
   if(long) $("#more").onclick=()=>{$("#q").classList.remove("clip");$("#more").remove()};
   $("#sSay").onclick=()=>say(s,0.95);
   $("#sCopy").onclick=()=>copy(s);
@@ -954,7 +1342,9 @@ function renderPanel(){
     try{const t=await translate(s);if(sel===my)box.innerHTML='<div class="tr"><span class="lab">机器翻译，仅供参考</span>'+esc(t)+"</div>"}
     catch(e){if(sel===my)box.innerHTML='<div class="tr"><span class="hint">这台设备暂时用不了离线翻译，请点“谷歌翻译”或“必应翻译”。</span></div>'}
   };
+  $("#sGram").onclick=()=>showGrammar(my);
   if(my.word){showWord(my);showPhrases(my)}
+  else showGrammar(my);
 }
 async function showPhrases(my){
   const toks=tokenize(sents[my.id]);
