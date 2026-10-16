@@ -211,6 +211,28 @@ mark.hl.flash{animation:flash 1.4s ease}
 .pl .act button{background:none;border:0;padding:0;font-size:12.5px;color:var(--accent)}
 .pl .act button.del{color:var(--muted)}
 .cl{white-space:pre-wrap;font-size:14px;line-height:1.75;margin-top:6px}
+.sbox{position:fixed;z-index:45;left:50%;transform:translateX(-50%);top:calc(64px + env(safe-area-inset-top,0px));width:min(640px,calc(100vw - 24px));max-height:70vh;display:flex;flex-direction:column;background:var(--sheet);border:1px solid var(--rule);border-radius:12px;box-shadow:0 10px 36px rgba(0,0,0,.2)}
+.sbar{display:flex;gap:8px;align-items:center;padding:10px 12px;border-bottom:1px solid var(--rule)}
+.sbar input[type=search]{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--rule);border-radius:8px;background:var(--paper);color:var(--ink);font-family:var(--text);font-size:16px}
+.sopt{font-size:13px;color:var(--muted);display:flex;align-items:center;gap:3px;white-space:nowrap}
+.sinfo{font-size:12.5px;color:var(--muted);padding:6px 14px}
+.sres{list-style:none;margin:0;padding:0 6px 8px;overflow:auto}
+.sres li button{display:block;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:8px 10px}
+.sres li button:hover,.sres li button:focus-visible{background:var(--accent-soft)}
+.sres .sc{font-size:12px;color:var(--accent)}
+.sres .st{font-family:var(--text);font-size:15px;line-height:1.55}
+.sres em,mark.sh{font-style:normal;background:rgba(242,205,80,.55);color:inherit;border-radius:2px}
+mark.sh{box-shadow:0 0 0 2px rgba(201,162,39,.8)}
+.sg{border-left:3px solid var(--accent);padding:2px 0 2px 10px;margin:6px 0}
+.sgt{font-family:var(--text);font-size:15px;line-height:1.5}
+.sgn{display:inline-block;min-width:18px;font-family:var(--zh);font-size:11px;color:var(--accent);font-weight:600}
+.sgk{font-size:12.5px;color:var(--muted);line-height:1.6;margin-top:2px}
+.dotsep{margin:0 6px;color:var(--rule)}
+.md h5.ch{font-size:13.5px;color:var(--accent);margin:12px 0 4px}
+.md p{margin:0 0 6px}
+.md ul{margin:0 0 6px;padding-left:1.2em}
+.md li{margin-bottom:3px}
+.cl.md{white-space:normal}
 dialog{border:1px solid var(--rule);border-radius:14px;background:var(--sheet);color:var(--ink);padding:0;width:min(440px,calc(100vw - 32px))}
 dialog::backdrop{background:rgba(0,0,0,.35)}
 .dlgf{padding:22px;font-size:14.5px;line-height:1.7;display:flex;flex-direction:column;gap:8px}
@@ -243,6 +265,7 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
   <button class="ib" id="fsp" aria-label="放大字号">A+</button>
   <button class="ib" id="theme" aria-label="切换深色或浅色">◐</button>
   <button class="ib" id="vBtn" aria-label="朗读声音设置">🔊</button>
+  <button class="ib" id="srchBtn" aria-label="搜索全书">🔍</button>
   <button class="ib" id="swap">书架</button>
 </div>
 
@@ -275,6 +298,11 @@ dialog::backdrop{background:rgba(0,0,0,.35)}
   </aside>
 </div>
 <div class="toast" id="toast" role="status"></div>
+<div class="sbox hidden" id="sbox" role="search">
+  <div class="sbar"><input id="sq" type="search" placeholder="搜索书中的单词或句子" autocomplete="off" lang="en"><label class="sopt"><input type="checkbox" id="sWhole">整词</label><button class="ib" id="sClose">关闭</button></div>
+  <div class="sinfo" id="sinfo"></div>
+  <ul class="sres" id="sres"></ul>
+</div>
 <div class="selbar hidden" id="selbar" role="toolbar" aria-label="选中文字的操作">
   <button class="dot c-y" data-c="y" aria-label="黄色划线"></button><button class="dot c-g" data-c="g" aria-label="绿色划线"></button><button class="dot c-b" data-c="b" aria-label="蓝色划线"></button><button class="dot c-p" data-c="p" aria-label="粉色划线"></button>
   <span class="sep"></span>
@@ -980,7 +1008,23 @@ async function analyze(s){
   const end=s.trim().slice(-1);
   const type=end==="?"?"疑问句":end==="!"?"感叹句":skel.length&&skel[0].imp?"祈使句（省略主语 you，表示命令、建议或提醒）":"陈述句";
   const struct=emb.length&&coords.length?"并列复合句（既有并列分句，又有从句）":coords.length?"并列句（两个以上分句用连词并列）":emb.length?"复合句（主句 + 从句）":"简单句";
-  return {s,terms,emb,coords,skel,verbs,type,struct};
+  // sense groups (意群)
+  const groups=[];let g=[];
+  terms.forEach((t,i)=>{
+    const prev=terms[i-1];
+    const brk=i>0&&g.length&&(
+      /[,;:\u2014\u2013]|\s-\s/.test(prev.post)||
+      COORD[t.w]&&(t.w==="but"||t.w==="yet"||t.w==="so"||g.length>=4)||
+      (SUB[t.w]||REL[t.w])&&g.length>=2||
+      t.pos==="prep"&&g.length>=6);
+    if(brk){groups.push(g);g=[]}
+    g.push(i);
+  });
+  if(g.length) groups.push(g);
+  for(let i=groups.length-1;i>0;i--){if(groups[i].length<2){groups[i-1]=groups[i-1].concat(groups[i]);groups.splice(i,1)}}
+  const sense=groups.map(ix=>({text:ix.map((i,k)=>(k?terms[i].pre:"")+terms[i].text+(k<ix.length-1?terms[i].post:terms[i].post.replace(/[\s,;:\u2014\u2013-]+$/,""))).join("").trim(),
+    keys:ix.map(i=>terms[i]).filter(t=>["n","v","adj","adv"].includes(t.pos)&&!KEEPW.has(t.w)&&t.w.length>2).map(t=>t.text)}));
+  return {s,terms,emb,coords,skel,verbs,type,struct,sense};
 }
 async function buildTemplate(A){
   const toks=tokenize(A.s);
@@ -1043,7 +1087,18 @@ function grammarHTML(A,tpl){
   h+='<h5>词性标注</h5><div class="cs" lang="en">'+A.terms.map(t=>esc(t.pre)+'<span class="p-'+(t.pos||"x")+'" title="'+(POSN[t.pos]||"")+'">'+esc(t.text)+"</span>"+esc(t.post)).join("")+"</div>";
   h+='<div class="lg">'+Object.entries(POSN).filter(([k])=>A.terms.some(t=>t.pos===k)).map(([k,v])=>'<span><i class="p-'+k+'"></i>'+v+"</span>").join("")+"</div>";
   h+="<h5>句子类型</h5><div>"+esc(A.type)+"；"+esc(A.struct)+"</div>";
-  h+="<h5>句子主干</h5>";
+  if(A.sense&&A.sense.length>1){
+    h+='<h5>意群拆分</h5><div id="sense">'+A.sense.map((g,i)=>'<div class="sg"><div class="sgt" lang="en"><span class="sgn">'+(i+1)+"</span>"+esc(g.text)+'</div><div class="sgk" data-k="'+esc(JSON.stringify(g.keys))+'"></div></div>').join("")+"</div>";
+    h+='<div class="from">想看每一块的含义、情绪基调和言外之意，点下面的“问 Claude 深度讲解”。</div>';
+  }
+  h+="<h5>核心骨架</h5>";
+  const coreLine=A.skel.map((k,i)=>{
+    const con=i>0&&A.coords[i-1]?A.coords[i-1].word+" ":"";
+    if(k.frag) return con+"["+k.frag+"]";
+    return con+(k.subj?k.subj:"(You)")+" ["+k.verb+(k.obj?" "+k.obj:"")+"]";
+  }).join(", ");
+  h+='<div class="en" lang="en" style="margin-bottom:4px">'+esc(coreLine)+"</div>";
+  h+='<div class="from" style="margin:0 0 6px">方括号里是谓语加宾语或表语，修饰成分和从句都去掉了。</div>';
   A.skel.forEach((k,i)=>{
     if(A.skel.length>1) h+='<div style="font-size:12.5px;color:var(--muted)">分句 '+(i+1)+"</div>";
     if(k.frag){h+='<div class="sk"><div><small>短语 / 省略成分的片段</small><b lang="en">'+esc(k.frag)+"</b></div></div>";return}
@@ -1063,7 +1118,7 @@ function grammarHTML(A,tpl){
   }
   h+='<h5>可复用句型（可以直接修改）</h5><textarea class="tpl" id="tplIn" rows="2" lang="en">'+esc(tpl)+"</textarea>";
   h+='<div class="from">[名词] [动词原形] 这些方括号是可替换的位置，其余是句型的骨架。</div>';
-  h+='<div class="row" style="margin-top:8px"><button class="ib" id="tplSave">保存到句型本</button><button class="ib gbtn" id="askC">🤖 问 Claude 深度讲解和造句</button></div>';
+  h+='<div class="row" style="margin-top:8px"><button class="ib" id="tplSave">保存到句型本</button><button class="ib gbtn" id="askC">🤖 问 Claude 深度讲解（含义 · 言外之意 · 造句）</button></div>';
   h+='<div id="cbox"></div>';
   h+='<div class="warn">以上是离线程序自动分析，句子越长越复杂越可能不准，仅供参考。需要准确讲解请点“问 Claude”。</div>';
   return h+"</div>";
@@ -1078,6 +1133,14 @@ async function showGrammar(my){
   const tpl=await buildTemplate(A);
   if(sel!==my) return;
   box.innerHTML=grammarHTML(A,tpl);
+  box.querySelectorAll(".sgk").forEach(async el=>{
+    const ks=JSON.parse(el.dataset.k||"[]");const out=[];
+    for(const k of ks.slice(0,6)){
+      const e=await lookup(k);
+      if(e&&!e.failed){const d=defLines(e.tr)[0];if(d) out.push('<span lang="en">'+esc(k)+"</span> "+esc(d.txt.split(/[,，;；]/).slice(0,2).join("，")))}
+    }
+    if(sel===my) el.innerHTML=out.join("<span class=\"dotsep\">·</span>");
+  });
   const meta=()=>({type:A.type,struct:A.struct,skel:A.skel.map(k=>k.frag?k.frag:[k.subj||"（省略）",k.verb,k.obj].filter(Boolean).join(" | ")).join(" ； ")});
   $("#tplSave").onclick=()=>{const p=savePattern({template:$("#tplIn").value.trim(),source:s,...meta()});toast(p.isNew?"已保存到句型本":"句型本里已有这个句型，已更新")};
   $("#askC").onclick=()=>askClaude(s,my.id,$("#tplIn").value.trim(),meta);
@@ -1085,15 +1148,39 @@ async function showGrammar(my){
 
 /* ---------- ask Claude (copy prompt, paste answer back) ---------- */
 function claudePrompt(s,prev,tpl){
-  return "请帮我讲解下面这句英文。我是中文母语者，英语中上水平，正在读英文书《"+book.title+"》，想把好的句型积累成口语素材。\n\n"+
+  return "请帮我深度讲解下面这句英文。我是中文母语者，英语中上水平，正在读英文书《"+book.title+"》，想读懂句子的言外之意，并把好的句型积累成口语素材。\n\n"+
   (prev?"上文："+prev+"\n":"")+"句子："+s+"\n"+(tpl?"阅读器自动提取的句型（可能不准）："+tpl+"\n":"")+
-  "\n请严格按下面的格式回答，所有语法术语和缩写都写中文全称：\n"+
-  "【中文翻译】\n通顺的译文\n"+
-  "【语法讲解】\n时态、语态、特殊语法现象，以及这句话为什么这样写\n"+
-  "【句子结构】\n先写主干（主语 + 谓语 + 宾语或表语），再逐块拆解修饰成分、从句和连接词\n"+
+  "\n请严格按下面的格式和顺序回答，每个部分以【】标题开头，所有语法术语和缩写都写中文全称：\n"+
+  "【中文翻译】\n通顺、有味道的译文\n"+
+  "【结构与核心成分拆解】\n按意群把句子切成几块，每一块写成：\n* 英文原文（中文意思）：\n   * 含义：这一块在说什么、作者的态度\n   * 情绪基调：这一块传达的情绪或语气（有就写）\n   * 关键词：块里值得注意的词和短语，逐个用中文解释\n"+
+  "【语法结构解读】\n"+
+  "核心骨架：用英文写出去掉修饰后的句子骨架，用方括号框出各个部分，比如 (You) [Sulk...], but [develop...]；下一行附中文意思。然后用列表写出主语（有省略要说明）和谓语（有并列、时态、语态要说明）\n"+
+  "详细语法成分拆解：按句子顺序分成第一部分、第二部分……逐块写，每个成分写成：\n* 英文（词性，句子成分，比如“动词，第一谓语”“介词短语，作原因状语”“动名词短语，作介词宾语”）：中文意思\n   * 内部结构或修饰关系\n连接词单独列出，说明它在逻辑上起什么作用\n"+
+  "语法亮点与修辞效果：用 1、2、3 列出这句话在语法安排上的巧妙之处（并列、递进、倒装、省略等），以及它带来的对比、递进、反转等效果\n"+
+  "【深层张力与言外之意】\n这句话的反讽、幽默、悖论或前后矛盾在哪里；和人物性格、作品主题、文化或时代背景有什么关系\n"+
+  "【总结】\n用两三句话概括这句话真正想表达的东西\n"+
   "【可复用句型】\n第一行只写一个可以套用的英文句型模板，用 [名词]、[动词原形]、[形容词] 这类方括号占位；第二行用中文说明这个句型表达什么语气或功能\n"+
   "【口语例句】\n用这个句型造 5 个日常生活或工作场景的口语句子，每行一句，格式：英文 —— 中文\n"+
   "【使用提示】\n什么场合适合说，语气正式还是随意，有什么容易用错的地方";
+}
+function mdLite(t){
+  const inl=x=>esc(x).replace(/\*\*(.+?)\*\*/g,"<b>$1</b>").replace(/`([^`]+)`/g,"<code>$1</code>");
+  let h="",depth=0;
+  const close=d=>{while(depth>d){h+="</ul>";depth--}};
+  for(const raw of t.split(/\r?\n/)){
+    const line=raw.replace(/\t/g,"    ");
+    if(!line.trim()){continue}
+    const sec=line.match(/^\s*[#*\s]*【([^】]+)】\s*(.*)$/);
+    if(sec){close(0);h+='<h5 class="ch">'+esc(sec[1])+"</h5>"+(sec[2]?"<p>"+inl(sec[2])+"</p>":"");continue}
+    const hd=line.match(/^\s*#{1,6}\s+(.*)$/);
+    if(hd){close(0);h+='<h5 class="ch">'+inl(hd[1])+"</h5>";continue}
+    const li=line.match(/^(\s*)(?:[*\-•]|\d+[.)、])\s+(.*)$/);
+    if(li){const d=Math.min(4,Math.floor(li[1].length/3)+1);
+      while(depth<d){h+="<ul>";depth++} close(d);
+      h+="<li>"+inl(li[2])+"</li>";continue}
+    close(0);h+="<p>"+inl(line.trim())+"</p>";
+  }
+  close(0);return h;
 }
 function parseClaude(t){
   const sec={};let cur="";
@@ -1123,7 +1210,7 @@ function askClaude(s,id,tpl,meta){
     const r=parseClaude(t);
     const p=savePattern({template:r.tpl||tpl,source:s,claude:r.raw,examples:r.examples,...meta()});
     toast("已保存到句型本"+(r.examples.length?"，含 "+r.examples.length+" 个例句":""));
-    box.innerHTML='<div class="from" style="color:var(--ok)">已保存。可以在“句型本”里查看、朗读例句和自己造句。</div>';
+    box.innerHTML='<div class="from" style="color:var(--ok)">已保存。可以在“句型本”里查看、朗读例句和自己造句。</div><div class="cl md">'+mdLite(r.raw)+"</div>";
   };
 }
 
@@ -1166,7 +1253,7 @@ function renderPats(){
       '<div class="ps" lang="en">原句：'+esc(p.source)+"</div>"+
       '<div class="pm">'+esc([p.book?"《"+p.book+"》":"",p.type||"",p.struct||""].filter(Boolean).join(" · "))+"</div>"+
       (p.skel?'<div class="pm">主干：<span lang="en">'+esc(p.skel)+"</span></div>":"")+
-      (p.claude?'<details><summary>Claude 的讲解</summary><div class="cl">'+esc(p.claude)+"</div></details>":"")+
+      (p.claude?'<details><summary>Claude 的讲解</summary><div class="cl md">'+mdLite(p.claude)+"</div></details>":"")+
       (p.examples.length?'<ul class="ex">'+p.examples.map((x,i)=>'<li><div class="tx">'+(x.by==="me"?'<span class="me">我造的</span>':"")+'<span class="e" lang="en">'+esc(x.en)+"</span>"+(x.zh?"<br>"+esc(x.zh):"")+'</div><button class="spk sm" data-say="'+esc(x.en)+'" aria-label="朗读">🔊</button>'+(x.by==="me"?'<button class="spk sm" data-rm="'+i+'" aria-label="删除">✕</button>':"")+"</li>").join("")+"</ul>":"")+
       '<div class="try"><input placeholder="用这个句型造一个你自己的句子" lang="en"><button class="ib" data-chk>检查并保存</button></div><div class="fb"></div>'+
       '<div class="act"><button data-edit>修改句型</button><button data-ask>问 Claude 造句</button><button class="del" data-del>删除</button></div></li>';
@@ -1217,6 +1304,54 @@ function renderPats(){
 }
 updatePatCount();
 
+/* ---------- search ---------- */
+let sIndex=null,sIndexFor=null;
+function buildIndex(){
+  if(sIndex&&sIndexFor===book) return sIndex;
+  sIndex=[];sIndexFor=book;
+  book.chapters.forEach((ch,ci)=>{let id=0;for(const b of ch.blocks){for(const t of sentences(b.text)){sIndex.push({ch:ci,id,t});id++}}});
+  return sIndex;
+}
+function escRe(x){return x.replace(/[.*+?^${}()|[\]\\]/g,"\\$&")}
+let lastQ="";
+function runSearch(){
+  const q=$("#sq").value.trim();const info=$("#sinfo"),res=$("#sres");
+  if(q.length<2){info.textContent=q?"至少输入两个字母":"";res.innerHTML="";return}
+  lastQ=q;
+  const whole=$("#sWhole").checked;
+  const re=new RegExp((whole?"\\b":"")+escRe(q).replace(/'/g,"['’]").replace(/\s+/g,"\\s+")+(whole?"\\b":""),"i");
+  const hits=[];
+  for(const x of buildIndex()){const m=x.t.match(re);if(m){hits.push({...x,at:m.index,len:m[0].length});if(hits.length>=300)break}}
+  info.textContent=hits.length?("找到 "+(hits.length>=300?"300+":hits.length)+" 处"+(hits.length>=300?"（只显示前 300 处，可以输入更长的内容缩小范围）":"")):"没有找到。试试换个写法，或取消“整词”。";
+  res.innerHTML=hits.map((h,i)=>{
+    const a=Math.max(0,h.at-60),b=Math.min(h.t.length,h.at+h.len+80);
+    const snip=(a>0?"…":"")+esc(h.t.slice(a,h.at))+"<em>"+esc(h.t.slice(h.at,h.at+h.len))+"</em>"+esc(h.t.slice(h.at+h.len,b))+(b<h.t.length?"…":"");
+    return '<li><button data-i="'+i+'"><div class="sc">'+esc(book.chapters[h.ch].title)+'</div><div class="st" lang="en">'+snip+"</div></button></li>";
+  }).join("");
+  res.querySelectorAll("button").forEach(btn=>btn.onclick=()=>jumpHit(hits[+btn.dataset.i]));
+}
+function jumpHit(h){
+  closeSearch();
+  const go=()=>{
+    const el=$('#text .s[data-s="'+h.id+'"]');if(!el) return;
+    document.querySelectorAll("#text mark.sh").forEach(m=>m.replaceWith(...m.childNodes));
+    const ms=wrapRange(el,h.at,h.at+h.len,"sh","");
+    (ms[0]||el).scrollIntoView({block:"center",behavior:"smooth"});
+    setTimeout(()=>{document.querySelectorAll("#text mark.sh").forEach(m=>m.replaceWith(...m.childNodes))},6000);
+  };
+  if(h.ch!==cur){showChapter(h.ch,0);setTimeout(go,80)}else go();
+}
+function openSearch(){$("#sbox").classList.remove("hidden");const i=$("#sq");i.focus();i.select();if(i.value) runSearch()}
+function closeSearch(){$("#sbox").classList.add("hidden")}
+let sT=0;
+$("#srchBtn").onclick=openSearch;
+$("#sClose").onclick=closeSearch;
+$("#sq").addEventListener("input",()=>{clearTimeout(sT);sT=setTimeout(runSearch,250)});
+$("#sq").addEventListener("keydown",e=>{if(e.key==="Enter"){clearTimeout(sT);runSearch()}if(e.key==="Escape")closeSearch()});
+$("#sWhole").onchange=runSearch;
+document.addEventListener("keydown",e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==="f"&&book&&!$("#reader").classList.contains("hidden")){e.preventDefault();openSearch()}});
+$("#selbar").insertAdjacentHTML("beforeend",'<button data-a="find">搜全书</button>');
+
 /* ---------- selection toolbar ---------- */
 let selT=0,lastSel=null;
 const bar=$("#selbar");
@@ -1245,6 +1380,7 @@ bar.addEventListener("click",e=>{
   if(a==="note"){const n=addNote(info,"y");window.getSelection().removeAllRanges();hideBar();openNote(n);return}
   if(a==="copy"){copy(info.text);return}
   if(a==="look"){window.getSelection().removeAllRanges();hideBar();lookSelection(info);return}
+  if(a==="find"){window.getSelection().removeAllRanges();hideBar();$("#sq").value=info.text.slice(0,80);openSearch();return}
 });
 async function lookSelection(info){
   clearMarks();
@@ -1443,7 +1579,7 @@ let fs=store.get("fs")||20;
 const applyFs=()=>root.style.setProperty("--fs",fs+"px");applyFs();
 $("#fsm").onclick=()=>{fs=Math.max(15,fs-1);applyFs();store.set("fs",fs)};
 $("#fsp").onclick=()=>{fs=Math.min(28,fs+1);applyFs();store.set("fs",fs)};
-$("#swap").onclick=()=>{closePanel(true);$("#reader").classList.add("hidden");$("#bar").classList.add("hidden");$("#start").classList.remove("hidden");showShelf()};
+$("#swap").onclick=()=>{closePanel(true);closeSearch();$("#reader").classList.add("hidden");$("#bar").classList.add("hidden");$("#start").classList.remove("hidden");showShelf()};
 $("#pick").onclick=()=>$("#file").click();
 $("#file").onchange=e=>{openFile(e.target.files[0]);e.target.value=""};
 const drop=$("#drop");
