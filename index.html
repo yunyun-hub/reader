@@ -1080,7 +1080,14 @@ async function buildTemplate(A){
   for(let i=0;i<m.length-1;i++){
     if(!m[i].slot&&/^(the|a|an|my|your|his|her|its|our|their|this|that|these|those|some|any)$/i.test(m[i].v)&&m[i+1].v==="[名词短语]"&&!/[,;:]/.test(m[i].post)){m[i+1].pre=m[i].pre;m.splice(i,1);i--}
   }
-  return m.map((x,i)=>(i?x.pre:"")+x.v+x.post).join("").trim();
+  let out2=m.map((x,i)=>(i?x.pre:"")+x.v+x.post).join("").trim();
+  // compress long lists: [名词], [名词], [名词] or [名词] → [名词], [名词] … or [名词]
+  const SL="\\[(?:名词|名词短语|形容词|动词原形|动词-ing)\\]";
+  out2=out2.replace(new RegExp(SL+"(?:(?:,\\s*|,?\\s+(?:and|or)\\s+)"+SL+"){2,}","g"),run=>{
+    const items=run.match(new RegExp(SL,"g"));const last=run.match(/(?:,\s*|\s+)(and|or)\s+\[[^\]]+\]$/);
+    return items[0]+", "+items[1]+" …"+(last?" "+last[1]+" "+items[items.length-1]:"");
+  });
+  return out2;
 }
 function grammarHTML(A,tpl){
   let h='<div class="gx">';
